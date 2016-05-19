@@ -3,7 +3,6 @@
 #include "Vector.h"               /* linear algebra related */
 #include "Trace.h"                 /* self definition */
 #include <math.h>                           /* sqrt */
-#include <stdlib.h>                         /* malloc */
 
 int TR_rendering_type;                      /* rendering options */
 Vector TR_viewer;              /* position of the viewer */
@@ -20,10 +19,10 @@ Vector TR_screen_v;
     TR_ray *TRI_make_ray_point(TR_ray *r, Vector& from, Vector& to)
     {
         //设置光线矢量的起始点
-        V_set(r->tr_start, from);
+        r->tr_start.set(from);
         //计算光线的矢量方向
-        V_difference(r->tr_codirected, to, from);
-        return(r);
+        r->tr_codirected = to - from;
+        return r;
     }
 
     /* * * * * * * * * * * * * * * * * * * * * * * * * * * * *\
@@ -35,9 +34,9 @@ Vector TR_screen_v;
 
     TR_ray *TRI_make_ray_vector(TR_ray *r, Vector& from, Vector& vector)
     {
-        V_set(r->tr_start, from);
-        V_set(r->tr_codirected, vector);
-        return(r);
+        r->tr_start.set(from);
+        r->tr_codirected.set(vector);
+        return r;
     }
 
     /* * * * * * * * * * * * * * * * * * * * * * * * * * * * *\
@@ -171,11 +170,11 @@ Vector TR_screen_v;
                 if (TR_rendering_type & TR_REFLECT)
                 {
                     V_unit_vector(viewer, where, TR_viewer);
-                    V_multiply(reflect, normal, V_scalar_product(normal, viewer) * 2);
-                    V_difference(reflect, reflect, viewer);
+                    reflect = normal * (V_scalar_product(normal, viewer) * 2);
+                    reflect = reflect - viewer;
                     TRI_make_ray_vector(&rr, where, reflect); /* prepare recursive ray */
 
-                    TRI_direct_ray(V_zero(rlight), w, &rr, obj, depth - 1);
+                    TRI_direct_ray(rlight.zero(), w, &rr, obj, depth - 1);
                     light[0] += rlight[0] * obj->tr_material.tr_reflect;
                     light[1] += rlight[1] * obj->tr_material.tr_reflect;
                     light[2] += rlight[2] * obj->tr_material.tr_reflect;
@@ -208,10 +207,10 @@ Vector TR_screen_v;
         float screen_vx, float screen_vy, float screen_vz
         )
     {
-        V_vector_coordinates(TR_viewer, viewer_x, viewer_y, viewer_z);
-        V_vector_coordinates(TR_screen, screen_x, screen_y, screen_z);
-        V_vector_coordinates(TR_screen_u, screen_ux, screen_uy, screen_uz);
-        V_vector_coordinates(TR_screen_v, screen_vx, screen_vy, screen_vz);
+        TR_viewer.set(viewer_x, viewer_y, viewer_z);
+        TR_screen.set(screen_x, screen_y, screen_z);
+        TR_screen_u.set(screen_ux, screen_uy, screen_uz);
+        TR_screen_v.set(screen_vx, screen_vy, screen_vz);
     }
 
     /**********************************************************\
@@ -227,7 +226,7 @@ Vector TR_screen_v;
         Vector d;
 
         a = V_scalar_product(r->tr_codirected, r->tr_codirected);
-        b = 2 * V_scalar_product(r->tr_codirected, V_difference(d, r->tr_start, tr_centre));
+        b = 2 * V_scalar_product(r->tr_codirected, d = (r->tr_start - tr_centre));
         c = V_scalar_product(d, d) - tr_radius*tr_radius;
 
         //根的判断
@@ -261,21 +260,18 @@ Vector TR_screen_v;
     //多边形的初始化
     void TR_polygon::TR_init()
     {
-        Vector a, b;
+        Vector a(tr_vertices[2], tr_vertices[1]);
+        Vector b(tr_vertices[1], tr_vertices[0]);
 
-        V_vector_points(a, tr_vertices[2], tr_vertices[1]);
-        V_vector_points(b, tr_vertices[1], tr_vertices[0]);
         V_vector_product(tr_normal, a, b);        /* normal to the plane */
 
-        V_zero(a);                                 /* making it unit length */
+        a.zero();                                 /* making it unit length */
         V_unit_vector(tr_normal, a, tr_normal);
 
         for (size_t i = 0; i < tr_vertices.size() - 1; ++i)           /* finding equations for edges */
         {
-            V_vector_points(a, tr_vertices[i], tr_vertices[i + 1]);
-            V_vector_product(b, tr_normal, a);
-            tr_edges.push_back(Plane());
-            V_plane(tr_edges[i], b, tr_vertices[i]);
+            V_vector_product(b, tr_normal, Vector(tr_vertices[i], tr_vertices[i + 1]));
+            tr_edges.push_back(Plane(b, tr_vertices[i]));
         }
     }
 
@@ -292,19 +288,19 @@ Vector TR_screen_v;
         float t, s1, s2;
         size_t size = tr_vertices.size() - 1;
 
-        V_difference(a, tr_vertices[0], r->tr_start);
+        a = tr_vertices[0] - r->tr_start;
         s1 = V_scalar_product(a, tr_normal);
         s2 = V_scalar_product(r->tr_codirected, tr_normal);
 
-        if (s2 == 0) return(-1); else t = s1 / s2;
-        if (t < 0) return(-1);
+        if (s2 == 0) return -1.0f; else t = s1 / s2;
+        if (t < 0) return -1.0f;
 
         TRI_on_ray(a, r, t);
 
         for (size_t i = 0; i < size; i++)
-            if (V_vertex_on_plane(tr_edges[i], a)>0) return(-1);
+            if (tr_edges[i].vertexOnPlane(a) > 0.0f) return -1.0f;
 
-        return(t);
+        return t;
     }
 
     /**********************************************************\
@@ -316,10 +312,8 @@ Vector TR_screen_v;
 
     Vector& TR_polygon::TR_normal(Vector& normal, Vector& where)
     {
-        normal[0] = tr_normal[0];
-        normal[1] = tr_normal[1];
-        normal[2] = tr_normal[2];
-        return(normal);
+        normal.set(tr_normal);
+        return normal;
     }
 
     /**********************************************************\
@@ -358,7 +352,7 @@ Vector TR_screen_v;
                 TRI_make_ray_point(&r, TR_viewer, point);
 
                 //关键中的关键，计算环境光，返回pixel的照明度
-                TRI_direct_ray(V_zero(l), w, &r, nullptr, depth);
+                TRI_direct_ray(l.zero(), w, &r, nullptr, depth);
 
                 //Setting a pixel
                 G_pixel(coord,
