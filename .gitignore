@@ -236,3 +236,4 @@ _Pvt_Extensions
 .fake/
 
 #.VC.db
+/RayTracing.VC.db

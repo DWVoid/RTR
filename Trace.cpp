@@ -107,17 +107,16 @@ Vector TR_screen_v;
      * --------                                              *
     \* * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-    bool TRI_shadow_ray(TR_world *w, TR_point_light *l, Vector& point, int cur_obj)
+    bool TRI_shadow_ray(TR_world *w, TR_point_light *l, Vector& point, TR_generic_object* cur_obj)
     {
         float t = 0.0;
-        size_t size = w->tr_objects.size();
         TR_ray r;
 
         TRI_make_ray_point(&r, point, l->tr_centre);
-        for (size_t i = 0; i < size; ++i)            /* finding intersection */
+        for (TR_generic_object* i : w->tr_objects)            /* finding intersection */
             if (i != cur_obj)
             {
-                t = w->tr_objects[i]->TR_intersect(&r);
+                t = i->TR_intersect(&r);
                 if ((t > 0) && (t <= 1)) return true;             /* first intersection is enough */
             }
         return false;
@@ -131,46 +130,42 @@ Vector TR_screen_v;
      * --------                                              *
     \* * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-    Vector& TRI_direct_ray(Vector& light, TR_world *w, TR_ray *r, int cur_obj, int depth)
+    Vector& TRI_direct_ray(Vector& light, TR_world *w, TR_ray *r, TR_generic_object* cur_obj, int depth)
     {
-        int min = 0, no_inter = 0;
-        float objt[TR_MAX_SPHERES], t = 0.0;
-        int obj[TR_MAX_SPHERES];
+        TR_generic_object* obj = nullptr;
+        float minInterDist = 1E5f, t = 0.0f;
         TR_ray rr;
         Vector where;                 /* current intersection */
         Vector normal;                /* of the current intersection */
         Vector viewer, reflect, rlight;
-        size_t osize = w->tr_objects.size(), lsize = w->tr_point_lights.size();
+        size_t lsize = w->tr_point_lights.size();
 
         if (depth != 0)
         {
-            for (size_t i = 0; i < osize; ++i)           /* finding intersection */
+            for (TR_generic_object* i : w->tr_objects)           /* finding intersection */
                 if (i != cur_obj)                           /* with itself, no sense */
                 {
-                    t = w->tr_objects[i]->TR_intersect(r);
-                    if (t > 0)
-                    {/* not behind the ray */
-                        objt[no_inter] = t;
-                        obj[no_inter++] = i;
+                    t = i->TR_intersect(r);
+                    if ((t > 0) && (t < minInterDist))/* not behind the ray */ 
+                    {
+                        minInterDist = t;/* finding closest intersection */
+                        obj = i;
                     }                /* a valid intersection */
                 }
-
-            if (no_inter != 0)                           /* if some objects intersected */
+            if (obj)                           /* if some objects intersected */
             {
-                for (size_t i = 1; i < no_inter; ++i)
-                    if (objt[min]>objt[i]) min = i;            /* finding closest intersection */
+                light[0] += obj->tr_material.tr_ambient[0] * w->tr_ambient[0];
+                light[1] += obj->tr_material.tr_ambient[1] * w->tr_ambient[1];
+                light[2] += obj->tr_material.tr_ambient[2] * w->tr_ambient[2];
 
-                light[0] += w->tr_objects[obj[min]]->tr_material.tr_ambient[0] * w->tr_ambient[0];
-                light[1] += w->tr_objects[obj[min]]->tr_material.tr_ambient[1] * w->tr_ambient[1];
-                light[2] += w->tr_objects[obj[min]]->tr_material.tr_ambient[2] * w->tr_ambient[2];
+                TRI_on_ray(where, r, minInterDist);           /* intersection's coordinate */
 
-                TRI_on_ray(where, r, objt[min]);           /* intersection's coordinate */
-
-                w->tr_objects[obj[min]]->TR_normal(normal, where);
+                obj->TR_normal(normal, where);
 
                 for (size_t i = 0; i < lsize; ++i)     /* illumination from each light */
-                    if ((!TRI_shadow_ray(w, w->tr_point_lights[i], where, obj[min])) || (!(TR_rendering_type & TR_SHADOW)))
-                        TRI_illuminate(light, w->tr_point_lights[i], &w->tr_objects[obj[min]]->tr_material,
+                    if ((!TRI_shadow_ray(w, w->tr_point_lights[i], where, obj)) || 
+                        (!(TR_rendering_type & TR_SHADOW)))
+                        TRI_illuminate(light, w->tr_point_lights[i], &obj->tr_material,
                             normal, where, TR_viewer);
 
                 if (TR_rendering_type & TR_REFLECT)
@@ -180,10 +175,10 @@ Vector TR_screen_v;
                     V_difference(reflect, reflect, viewer);
                     TRI_make_ray_vector(&rr, where, reflect); /* prepare recursive ray */
 
-                    TRI_direct_ray(V_zero(rlight), w, &rr, obj[min], depth - 1);
-                    light[0] += rlight[0] * w->tr_objects[obj[min]]->tr_material.tr_reflect;
-                    light[1] += rlight[1] * w->tr_objects[obj[min]]->tr_material.tr_reflect;
-                    light[2] += rlight[2] * w->tr_objects[obj[min]]->tr_material.tr_reflect;
+                    TRI_direct_ray(V_zero(rlight), w, &rr, obj, depth - 1);
+                    light[0] += rlight[0] * obj->tr_material.tr_reflect;
+                    light[1] += rlight[1] * obj->tr_material.tr_reflect;
+                    light[2] += rlight[2] * obj->tr_material.tr_reflect;
                 }
             }
         }
@@ -206,10 +201,7 @@ Vector TR_screen_v;
      * orientation of the projection plane in the world       *
      * space.                                                 *
     \**********************************************************/
-    //摄像机参数的设置，
-    //TR_viever存储遮视窗eye的位置?
-    //TR_screen是投影平面??
-    //TR_screen_u & TR_sreen_v 是世界空间在投影平面上的投影
+ 
     void TR_set_camera(float viewer_x, float viewer_y, float viewer_z,
         float screen_x, float screen_y, float screen_z,
         float screen_ux, float screen_uy, float screen_uz,
@@ -270,7 +262,6 @@ Vector TR_screen_v;
     void TR_polygon::TR_init()
     {
         Vector a, b;
-        //指定类型
 
         V_vector_points(a, tr_vertices[2], tr_vertices[1]);
         V_vector_points(b, tr_vertices[1], tr_vertices[0]);
@@ -367,7 +358,7 @@ Vector TR_screen_v;
                 TRI_make_ray_point(&r, TR_viewer, point);
 
                 //关键中的关键，计算环境光，返回pixel的照明度
-                TRI_direct_ray(V_zero(l), w, &r, -1, depth);
+                TRI_direct_ray(V_zero(l), w, &r, nullptr, depth);
 
                 //Setting a pixel
                 G_pixel(coord,
