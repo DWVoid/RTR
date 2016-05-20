@@ -79,13 +79,6 @@ public:
     std::vector<BaseObject*> tr_objects;
 };
 
-#define TR_AMBIENT  0x1                     /* only ambient illumination */
-#define TR_DIFFUSE  0x2                     /* only diffuse illumination */
-#define TR_SPECULAR 0x4                     /* plus all of the above */
-#define TR_SHADOW   0x8                     /* shoot shadow rays */
-#define TR_REFLECT  0x10                    /* shoot reflection rays */
-
-void TR_init_rendering(int type);
 void TR_set_camera(float viewer_x,float viewer_y,float viewer_z,
                    float screen_x,float screen_y,float screen_z,
                    float screen_ux,float screen_uy,float screen_uz,

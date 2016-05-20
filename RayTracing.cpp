@@ -320,7 +320,6 @@ int main(int n, char **o)
 
 	w = PersetWorld();
 	CL_init_colour();
-    TR_init_rendering(TR_SPECULAR|TR_SHADOW|TR_REFLECT);
     TR_init_world(w);
 	G_init_graphics();
 	HW_init_screen(display,"3D RayTracing");
@@ -359,6 +358,7 @@ void HW_init_event_loop(void (*application_main)(void),
 			InvalidateRect(HW_wnd,&HW_rect,TRUE);
 			UpdateWindow(HW_wnd);
 		}
+		Sleep(1);
 	}
 }
 

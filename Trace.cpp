@@ -138,8 +138,7 @@ Vec3d TR_screen_v;
 				obj->TR_normal(normal, where);
 
 				for (size_t i = 0; i < lsize; ++i)     /* illumination from each light */
-					if ((!TRI_shadow_ray(w, w->tr_point_lights[i], where, obj)) ||
-						(!(TR_rendering_type & TR_SHADOW)))
+					if (!TRI_shadow_ray(w, w->tr_point_lights[i], where, obj))
 						TRI_illuminate(light, w->tr_point_lights[i], &obj->tr_material,
 							normal, where, TR_viewer);
 
@@ -152,15 +151,6 @@ Vec3d TR_screen_v;
 			}
         }
         return(light);
-    }
-
-    /**********************************************************\
-     * Setting the rendering type.                            *
-    \**********************************************************/
-
-    void TR_init_rendering(int type)
-    {
-        TR_rendering_type = type;
     }
 
     /**********************************************************\
