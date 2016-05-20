@@ -288,7 +288,6 @@ Vec3d TR_screen_v;
     {
         float x, y;
         Vec3d l;//light
-        Vec3d point;
         int coord[2];
         Ray r;
 
@@ -298,10 +297,8 @@ Vec3d TR_screen_v;
                 x = coord[0] - HW_SCREEN_X_SIZE / 2;
                 y = coord[1] - HW_SCREEN_Y_SIZE / 2;                  /* plane coordinates */
 
-                point = (TR_screen_u*x) + (TR_screen_v * y) + TR_screen;
-
                 //从两个点(point and TR_viewer)构建ray
-                TRI_make_ray_point(&r, TR_viewer, point);
+                TRI_make_ray_point(&r, TR_viewer, (TR_screen_u * x) + (TR_screen_v * y) + TR_screen);
 
                 //关键中的关键，计算环境光，返回pixel的照明度
                 TRI_direct_ray(l.zero(), w, &r, nullptr, depth);
