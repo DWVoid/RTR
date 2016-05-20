@@ -12,6 +12,13 @@ public:
     Vec3d operator + (const Vec3d& b) const;
     Vec3d operator * (const float b) const;
     Vec3d operator * (const Vec3d& b) const; //Cross Product
+
+	Vec3d& operator -= (const Vec3d& b);
+	Vec3d& operator += (const Vec3d& b);
+	Vec3d& operator *= (const float b);
+	Vec3d& operator *= (const Vec3d& b); //Cross Product
+
+	Vec3d blend(const Vec3d& b) const;
     Vec3d& zero();
     Vec3d& set(const Vec3d& to);
     Vec3d& set(const float _x, const float _y, const float _z);

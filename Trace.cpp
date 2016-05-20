@@ -18,7 +18,7 @@ Vec3d TR_screen_v;
     Ray *TRI_make_ray_point(Ray *r, Vec3d& from, Vec3d& to)
     {
         //设置光线矢量的起始点
-        r->tr_start.set(from);
+        r->tr_start = from;
         //计算光线的矢量方向
         r->tr_codirected = to - from;
         return r;
@@ -33,8 +33,8 @@ Vec3d TR_screen_v;
 
     Ray *TRI_make_ray_vector(Ray *r, Vec3d& from, Vec3d& vector)
     {
-        r->tr_start.set(from);
-        r->tr_codirected.set(vector);
+        r->tr_start = from;
+        r->tr_codirected = vector;
         return r;
     }
 
@@ -47,10 +47,7 @@ Vec3d TR_screen_v;
 
     Vec3d& TRI_on_ray(Vec3d& point, Ray *r, float t)
     {
-        point.x = r->tr_start.x + r->tr_codirected.x * t;
-        point.y = r->tr_start.y + r->tr_codirected.y * t;
-        point.z = r->tr_start.z + r->tr_codirected.z * t;
-        return(point);
+        return point = r->tr_start + r->tr_codirected * t;
     }
 
     /* * * * * * * * * * * * * * * * * * * * * * * * * * * * *\
@@ -63,35 +60,19 @@ Vec3d TR_screen_v;
     Vec3d& TRI_illuminate(Vec3d& light, PointLight *l, Material *material,
         Vec3d& normal, Vec3d& where, Vec3d& viewer)
     {
-        int i;
-        Vec3d lightvector, viewvector, reflect;
-        float diffuseratio, specularratio, specularfun;
+        Vec3d lightvector;
+        float diffuseratio, specularratio;
 
         lightvector = (l->tr_centre - where).unit();
-        viewvector = (viewer - where).unit();
 
-        if ((diffuseratio = normal.dot(lightvector)) > 0)
-        {
-            if (TR_rendering_type&(TR_DIFFUSE | TR_SPECULAR))
-            {
-                light.x += l->tr_intensity.x * material->tr_diffuse.x * diffuseratio;
-                light.y += l->tr_intensity.y * material->tr_diffuse.y * diffuseratio;
-                light.z += l->tr_intensity.z * material->tr_diffuse.z * diffuseratio;
-            }
-            /* diffuse term */
-            if (TR_rendering_type&TR_SPECULAR)
-            {
-                reflect = normal * (diffuseratio * 2) - lightvector;
+		if ((diffuseratio = normal.dot(lightvector)) > 0)
+		{
+			light += l->tr_intensity.blend(material->tr_diffuse) * diffuseratio;//diffuse term 
 
-                if ((specularratio = reflect.dot(viewvector)) > 0)
-                {
-                    for (specularfun = 1, i = 0; i < material->tr_exponent; i++) specularfun *= specularratio;
-                    light.x += l->tr_intensity.x * material->tr_specular*specularfun;
-                    light.y += l->tr_intensity.y * material->tr_specular*specularfun;
-                    light.z += l->tr_intensity.z * material->tr_specular*specularfun;
-                }                                        /* specular term */
-            }
-        }
+			if ((specularratio = (normal * (diffuseratio * 2) - lightvector).dot((viewer - where).unit())) > 0)
+				light += l->tr_intensity * material->tr_specular * pow(specularratio, (int)material->tr_exponent);
+			//specular term
+		}
         return(light);
     }
 
@@ -148,34 +129,27 @@ Vec3d TR_screen_v;
                         obj = i;
                     }                /* a valid intersection */
                 }
-            if (obj)                           /* if some objects intersected */
-            {
-                light.x += obj->tr_material.tr_ambient.x * w->tr_ambient.x;
-                light.y += obj->tr_material.tr_ambient.y * w->tr_ambient.y;
-                light.z += obj->tr_material.tr_ambient.z * w->tr_ambient.z;
+			if (obj)                           /* if some objects intersected */
+			{
+				light += obj->tr_material.tr_ambient.blend(w->tr_ambient);
 
-                TRI_on_ray(where, r, minInterDist);           /* intersection's coordinate */
+				TRI_on_ray(where, r, minInterDist);           /* intersection's coordinate */
 
-                obj->TR_normal(normal, where);
+				obj->TR_normal(normal, where);
 
-                for (size_t i = 0; i < lsize; ++i)     /* illumination from each light */
-                    if ((!TRI_shadow_ray(w, w->tr_point_lights[i], where, obj)) || 
-                        (!(TR_rendering_type & TR_SHADOW)))
-                        TRI_illuminate(light, w->tr_point_lights[i], &obj->tr_material,
-                            normal, where, TR_viewer);
+				for (size_t i = 0; i < lsize; ++i)     /* illumination from each light */
+					if ((!TRI_shadow_ray(w, w->tr_point_lights[i], where, obj)) ||
+						(!(TR_rendering_type & TR_SHADOW)))
+						TRI_illuminate(light, w->tr_point_lights[i], &obj->tr_material,
+							normal, where, TR_viewer);
 
-                if (TR_rendering_type & TR_REFLECT)
-                {
-                    viewer = (TR_viewer - where).unit();
-                    reflect = normal * normal.dot(viewer) * 2 - viewer;
-                    TRI_make_ray_vector(&rr, where, reflect); /* prepare recursive ray */
+				viewer = (TR_viewer - where).unit();
+				reflect = normal * normal.dot(viewer) * 2 - viewer;
+				TRI_make_ray_vector(&rr, where, reflect); /* prepare recursive ray */
 
-                    TRI_direct_ray(rlight.zero(), w, &rr, obj, depth - 1);
-                    light.x += rlight.x * obj->tr_material.tr_reflect;
-                    light.y += rlight.y * obj->tr_material.tr_reflect;
-                    light.z += rlight.z * obj->tr_material.tr_reflect;
-                }
-            }
+				TRI_direct_ray(rlight.zero(), w, &rr, obj, depth - 1);
+				light += rlight * obj->tr_material.tr_reflect;
+			}
         }
         return(light);
     }
@@ -255,7 +229,8 @@ Vec3d TR_screen_v;
     //多边形的初始化
     void TPolygon::TR_init()
     {
-        tr_normal = (Vec3d(tr_vertices[2], tr_vertices[1]) * Vec3d(tr_vertices[1], tr_vertices[0])).unit();        /* normal to the plane */
+        tr_normal = (Vec3d(tr_vertices[2], tr_vertices[1]) * Vec3d(tr_vertices[1], tr_vertices[0])).unit();        
+		/* normal to the plane */
 
         for (size_t i = 0; i < tr_vertices.size() - 1; ++i)           /* finding equations for edges */
             tr_edges.push_back(Plane(tr_normal * Vec3d(tr_vertices[i], tr_vertices[i + 1]), tr_vertices[i]));

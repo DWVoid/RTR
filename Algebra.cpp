@@ -39,6 +39,37 @@ Vec3d Vec3d::operator*(const Vec3d & b) const
         x * b.y - y * b.x);
 }
 
+Vec3d& Vec3d::operator-=(const Vec3d & b)
+{
+	x -= b.x; y -= b.y; z -= b.z;
+	return *this;
+}
+
+Vec3d& Vec3d::operator+=(const Vec3d & b)
+{
+	x += b.x; y += b.y; z += b.z;
+	return *this;
+}
+
+Vec3d& Vec3d::operator*=(const float b)
+{
+	x *= b, y *= b, z *= b;
+	return *this;
+}
+
+Vec3d& Vec3d::operator*=(const Vec3d & b) 
+{
+	x = y * b.z - z * b.y;
+	y = z * b.x - x * b.z;
+	z = x * b.y - y * b.x;
+	return *this;
+}
+
+Vec3d Vec3d::blend(const Vec3d & b) const
+{
+	return Vec3d(x * b.x, y * b.y, z * b.z);
+}
+
 Vec3d & Vec3d::zero()
  {
     x = y = z = 0; 
