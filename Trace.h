@@ -2,13 +2,13 @@
 #define _TRACE_H_
 
 #include <vector>
-#include "Vector.h"               /* V_LNG_VECTOR */
-struct TR_matter
+#include "Algebra.h"     
+struct Material
 {
 	//环境反射，RGB矢量
-	Vector tr_ambient;            /* coefs of ambient reflection */
+	Vec3d tr_ambient;            /* coefs of ambient reflection */
    //漫反射，RGB矢量
-	Vector tr_diffuse;            /* coefs of diffuse reflection */
+	Vec3d tr_diffuse;            /* coefs of diffuse reflection */
    //镜面反射
 	float tr_specular;                         /* coef of specular reflection */
    //镜面反射系数
@@ -17,56 +17,66 @@ struct TR_matter
 	float tr_reflect;                          /* recursive ray */
 };
 
-struct TR_point_light
+struct PointLight
 {
-	Vector tr_centre;             /* point light source */
-	Vector tr_intensity;
+	Vec3d tr_centre;             /* point light source */
+	Vec3d tr_intensity;
 };
 
-struct TR_ray
+struct Ray
 {
-	Vector tr_start;              /* origin of the ray */
-	Vector tr_codirected;         /* a co-directed vector */
+	Vec3d tr_start;              /* origin of the ray */
+	Vec3d tr_codirected;         /* a co-directed vector */
 };
 
-class TR_generic_object                    /* for storage in the world */
+class BaseObject                    /* for storage in the world */
 {
 public:
-    TR_matter tr_material;              /* material it is made of */
+    Material tr_material;              /* material it is made of */
     virtual void TR_init() {};
-    virtual float TR_intersect(TR_ray *r) = 0;
-    virtual Vector& TR_normal(Vector& normal, Vector& where) = 0;
+    virtual float TR_intersect(Ray *r) = 0;
+    virtual Vec3d& TR_normal(Vec3d& normal, Vec3d& where) = 0;
 };
 
-class TR_sphere :public TR_generic_object
+class Sphere :public BaseObject
 {
 public:
-    Vector tr_centre;             /* sphere's centre */
+    Vec3d tr_centre;             /* sphere's centre */
     float tr_radius;
-    float TR_intersect(TR_ray *r);
-    Vector& TR_normal(Vector& normal, Vector& where);
+    float TR_intersect(Ray *r);
+    Vec3d& TR_normal(Vec3d& normal, Vec3d& where);
 };
 
-class TR_polygon:public TR_generic_object
+class TPolygon:public BaseObject
 {
 public:
-    Vector tr_normal;
+    Vec3d tr_normal;
     std::vector<Plane> tr_edges;   
-    std::vector<Vector> tr_vertices;
+    std::vector<Vec3d> tr_vertices;
     void TR_init();
-    float TR_intersect(TR_ray *r);
-    Vector& TR_normal(Vector& normal, Vector& where);
+    float TR_intersect(Ray *r);
+    Vec3d& TR_normal(Vec3d& normal, Vec3d& where);
 };
 
 #define TR_MAX_POINT_LIGHTS 10
 #define TR_MAX_SPHERES      10
 
-class TR_world
+class Camera
 {
 public:
-    Vector tr_ambient;            /* illumination of the world */
-    std::vector<TR_point_light*> tr_point_lights;
-    std::vector<TR_generic_object*> tr_objects;
+
+};
+
+class PerspectiveCamera : public Camera
+{
+
+};
+class Scene
+{
+public:
+    Vec3d tr_ambient;            /* illumination of the world */
+    std::vector<PointLight*> tr_point_lights;
+    std::vector<BaseObject*> tr_objects;
 };
 
 #define TR_AMBIENT  0x1                     /* only ambient illumination */
@@ -81,7 +91,7 @@ void TR_set_camera(float viewer_x,float viewer_y,float viewer_z,
                    float screen_ux,float screen_uy,float screen_uz,
                    float screen_vx,float screen_vy,float screen_vz
                   );
-void TR_init_world(TR_world *w);
-void TR_trace_world(TR_world *w,int depth);
+void TR_init_world(Scene *w);
+void TR_trace_world(Scene *w,int depth);
 
 #endif

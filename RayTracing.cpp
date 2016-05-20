@@ -1,4 +1,3 @@
-
 #include "RayTracing.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,10 +5,8 @@
 #include "Trace.h"
 #include "Colour.h"
 #include "Graphics.h"
-#include "Vector.h"
+#include "Algebra.h"
 #include <string.h>
-
-//extern int main(int n,char **o);            /* real main (well...) */
 
 int HW_cmd_show;
 HINSTANCE HW_instance;
@@ -22,14 +19,9 @@ HDC HW_mem;
 HBITMAP HW_bmp;
 RECT HW_rect;
 
-#if defined(_RGB_)                          /* paths to data sets */
- #if defined(_32BPP_)
 char path[128]="";
- #endif
-#endif
 
-TR_world *w;
-
+Scene *w;
 
 void HWI_null_function(void) {}
 void (*HW_application_main)(void) = HWI_null_function;
@@ -192,8 +184,6 @@ void HW_init_screen(char *display_name,
 	((GetDeviceCaps(ps.hdc,BITSPIXEL))!=sizeof(HW_pixel)*8)
 	)
 
-	//HW_error("%d",(GetDeviceCaps(ps.hdc,BITSPIXEL)));
-
 	HW_error("(Hardware) I'd rather have %d bit screen.",
 		   sizeof(HW_pixel)*8
 		  );
@@ -239,9 +229,9 @@ void HW_blit(void)
 void app_main(void)                         /* rendering loop */
 {
 	//光线跟踪场景中设置摄像机
-	//TR_set_camera(0,0,500, 0,0,0, 1,0,0, 0,1,0);
+	TR_set_camera(0,0,500, 0,0,0, 1,0,0, 0,1,0);
 	//TR_set_camera(0,0,900, 0,0,0, 1,0,0, 0,1,0);
-    TR_set_camera(0, -1000, 50,  0, -500, 50,  1, 0, 0,  0, 0, 1);
+    //TR_set_camera(0, -1000, 50,  0, -500, 50,  1, 0, 0,  0, 0, 1);
 
 	//关键中的关键，光线跟踪窗口中的pixel
 	TR_trace_world(w,10);
@@ -259,59 +249,59 @@ void HW_close_screen(void)
 	DeleteObject(HW_bmp);
 }
 
-TR_world* PersetWorld()
+Scene* PersetWorld()
 {
-    TR_world* w = new TR_world;
-    w->tr_ambient = Vector(0.1, 0.1, 0.1);
+    Scene* w = new Scene;
+    w->tr_ambient = Vec3d(0.1, 0.1, 0.1);
 
-    TR_point_light* l = new TR_point_light[2];
+    PointLight* l = new PointLight[2];
 
-    l[0].tr_centre = Vector(-500, -50, -400);
-    l[0].tr_intensity = Vector(0.4, 0.4, 0.4);
-    l[1].tr_centre = Vector(300, -50, -400);
-    l[1].tr_intensity = Vector(0.5, 0.5, 0.5);
+    l[0].tr_centre = Vec3d(-500, -50, -400);
+    l[0].tr_intensity = Vec3d(0.4, 0.4, 0.4);
+    l[1].tr_centre = Vec3d(300, -50, -400);
+    l[1].tr_intensity = Vec3d(0.5, 0.5, 0.5);
     w->tr_point_lights.push_back(l);
     w->tr_point_lights.push_back(l + 1);
 
-    TR_polygon * p = new TR_polygon;
-    p->tr_vertices.push_back(Vector(-300, 130, 300));
-    p->tr_vertices.push_back(Vector(300, 130, 300));
-    p->tr_vertices.push_back(Vector(300, 130, 0));
-    p->tr_vertices.push_back(Vector(-300, 130, 0));
-    p->tr_vertices.push_back(Vector(-300, 130, 300));
-    p->tr_normal = Vector(0, 0, 0);
-    p->tr_material.tr_ambient = Vector(0.6, 0.6, 0.6);
-    p->tr_material.tr_diffuse = Vector(0.6, 0.6, 0.6);
+    TPolygon * p = new TPolygon;
+    p->tr_vertices.push_back(Vec3d(-300, 130, 300));
+    p->tr_vertices.push_back(Vec3d(300, 130, 300));
+    p->tr_vertices.push_back(Vec3d(300, 130, 0));
+    p->tr_vertices.push_back(Vec3d(-300, 130, 0));
+    p->tr_vertices.push_back(Vec3d(-300, 130, 300));
+    p->tr_normal = Vec3d(0, 0, 0);
+    p->tr_material.tr_ambient = Vec3d(0.6, 0.6, 0.6);
+    p->tr_material.tr_diffuse = Vec3d(0.6, 0.6, 0.6);
     p->tr_material.tr_specular = 0.9;
     p->tr_material.tr_exponent = 30;
     p->tr_material.tr_reflect = 0.3;
     w->tr_objects.push_back(p);
 
-    TR_sphere *s1 = new TR_sphere;
+    Sphere *s1 = new Sphere;
     s1->tr_radius = 75;
-    s1->tr_centre = Vector(-100, -70, 500);
-    s1->tr_material.tr_ambient = Vector(1, 0.5, 0);
-    s1->tr_material.tr_diffuse = Vector(1, 0.5, 0);
+    s1->tr_centre = Vec3d(-100, -70, 500);
+    s1->tr_material.tr_ambient = Vec3d(1, 0.5, 0);
+    s1->tr_material.tr_diffuse = Vec3d(1, 0.5, 0);
     s1->tr_material.tr_specular = 0.9;
     s1->tr_material.tr_exponent = 30;
     s1->tr_material.tr_reflect = 0.4;
     w->tr_objects.push_back(s1);
 
-    TR_sphere *s2 = new TR_sphere;
+    Sphere *s2 = new Sphere;
     s2->tr_radius = 75;
-    s2->tr_centre = Vector(90, 55, 120);
-    s2->tr_material.tr_ambient = Vector(1, 0, 0);
-    s2->tr_material.tr_diffuse = Vector(1, 0, 0);
+    s2->tr_centre = Vec3d(90, 55, 120);
+    s2->tr_material.tr_ambient = Vec3d(1, 0, 0);
+    s2->tr_material.tr_diffuse = Vec3d(1, 0, 0);
     s2->tr_material.tr_specular = 0.9;
     s2->tr_material.tr_exponent = 30;
     s2->tr_material.tr_reflect = 0.4;
     w->tr_objects.push_back(s2);
 
-    TR_sphere *s3 = new TR_sphere;
+    Sphere *s3 = new Sphere;
     s3->tr_radius = 75;
-    s3->tr_centre = Vector(-90, 55, 120);
-    s3->tr_material.tr_ambient = Vector(0, 1, 1);
-    s3->tr_material.tr_diffuse = Vector(0, 1, 1);
+    s3->tr_centre = Vec3d(-90, 55, 120);
+    s3->tr_material.tr_ambient = Vec3d(0, 1, 1);
+    s3->tr_material.tr_diffuse = Vec3d(0, 1, 1);
     s3->tr_material.tr_specular = 0.6;
     s3->tr_material.tr_exponent = 30;
     s3->tr_material.tr_reflect = 0.3;

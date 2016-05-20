@@ -1,14 +1,13 @@
 #include "Graphics.h"           /* G_pixel */
 #include "Colour.h"               /* colour related */
-#include "Vector.h"               /* linear algebra related */
 #include "Trace.h"                 /* self definition */
 #include <math.h>                           /* sqrt */
 
 int TR_rendering_type;                      /* rendering options */
-Vector TR_viewer;              /* position of the viewer */
-Vector TR_screen;              /* origine of the screen */
-Vector TR_screen_u;            /* screen orientation vectors */
-Vector TR_screen_v;
+Vec3d TR_viewer;              /* position of the viewer */
+Vec3d TR_screen;              /* origine of the screen */
+Vec3d TR_screen_u;            /* screen orientation vectors */
+Vec3d TR_screen_v;
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * *\
  * Constructing a ray from two points.                   *
@@ -16,7 +15,7 @@ Vector TR_screen_v;
  * RETURNS: Constructed ray.                             *
  * --------                                              *
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-    TR_ray *TRI_make_ray_point(TR_ray *r, Vector& from, Vector& to)
+    Ray *TRI_make_ray_point(Ray *r, Vec3d& from, Vec3d& to)
     {
         //设置光线矢量的起始点
         r->tr_start.set(from);
@@ -32,7 +31,7 @@ Vector TR_screen_v;
      * --------                                              *
     \* * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-    TR_ray *TRI_make_ray_vector(TR_ray *r, Vector& from, Vector& vector)
+    Ray *TRI_make_ray_vector(Ray *r, Vec3d& from, Vec3d& vector)
     {
         r->tr_start.set(from);
         r->tr_codirected.set(vector);
@@ -46,11 +45,11 @@ Vector TR_screen_v;
      * --------                                              *
     \* * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-    Vector& TRI_on_ray(Vector& point, TR_ray *r, float t)
+    Vec3d& TRI_on_ray(Vec3d& point, Ray *r, float t)
     {
-        point[0] = r->tr_start[0] + r->tr_codirected[0] * t;
-        point[1] = r->tr_start[1] + r->tr_codirected[1] * t;
-        point[2] = r->tr_start[2] + r->tr_codirected[2] * t;
+        point.x = r->tr_start.x + r->tr_codirected.x * t;
+        point.y = r->tr_start.y + r->tr_codirected.y * t;
+        point.z = r->tr_start.z + r->tr_codirected.z * t;
         return(point);
     }
 
@@ -61,37 +60,35 @@ Vector TR_screen_v;
      * --------                                              *
     \* * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-    Vector& TRI_illuminate(Vector& light, TR_point_light *l, TR_matter *material,
-        Vector& normal, Vector& where, Vector& viewer)
+    Vec3d& TRI_illuminate(Vec3d& light, PointLight *l, Material *material,
+        Vec3d& normal, Vec3d& where, Vec3d& viewer)
     {
         int i;
-        Vector lightvector, viewvector, reflect;
+        Vec3d lightvector, viewvector, reflect;
         float diffuseratio, specularratio, specularfun;
 
-        V_unit_vector(lightvector, where, l->tr_centre);
-        V_unit_vector(viewvector, where, viewer);
+        lightvector = (l->tr_centre - where).unit();
+        viewvector = (viewer - where).unit();
 
-        if ((diffuseratio = V_scalar_product(normal, lightvector)) > 0)
+        if ((diffuseratio = normal.dot(lightvector)) > 0)
         {
             if (TR_rendering_type&(TR_DIFFUSE | TR_SPECULAR))
             {
-                light[0] += l->tr_intensity[0] * material->tr_diffuse[0] * diffuseratio;
-                light[1] += l->tr_intensity[1] * material->tr_diffuse[1] * diffuseratio;
-                light[2] += l->tr_intensity[2] * material->tr_diffuse[2] * diffuseratio;
+                light.x += l->tr_intensity.x * material->tr_diffuse.x * diffuseratio;
+                light.y += l->tr_intensity.y * material->tr_diffuse.y * diffuseratio;
+                light.z += l->tr_intensity.z * material->tr_diffuse.z * diffuseratio;
             }
             /* diffuse term */
             if (TR_rendering_type&TR_SPECULAR)
             {
-                reflect[0] = 2 * diffuseratio*normal[0] - lightvector[0];
-                reflect[1] = 2 * diffuseratio*normal[1] - lightvector[1];
-                reflect[2] = 2 * diffuseratio*normal[2] - lightvector[2];
+                reflect = normal * (diffuseratio * 2) - lightvector;
 
-                if ((specularratio = V_scalar_product(reflect, viewvector)) > 0)
+                if ((specularratio = reflect.dot(viewvector)) > 0)
                 {
                     for (specularfun = 1, i = 0; i < material->tr_exponent; i++) specularfun *= specularratio;
-                    light[0] += l->tr_intensity[0] * material->tr_specular*specularfun;
-                    light[1] += l->tr_intensity[1] * material->tr_specular*specularfun;
-                    light[2] += l->tr_intensity[2] * material->tr_specular*specularfun;
+                    light.x += l->tr_intensity.x * material->tr_specular*specularfun;
+                    light.y += l->tr_intensity.y * material->tr_specular*specularfun;
+                    light.z += l->tr_intensity.z * material->tr_specular*specularfun;
                 }                                        /* specular term */
             }
         }
@@ -106,13 +103,13 @@ Vector TR_screen_v;
      * --------                                              *
     \* * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-    bool TRI_shadow_ray(TR_world *w, TR_point_light *l, Vector& point, TR_generic_object* cur_obj)
+    bool TRI_shadow_ray(Scene *w, PointLight *l, Vec3d& point, BaseObject* cur_obj)
     {
         float t = 0.0;
-        TR_ray r;
+        Ray r;
 
         TRI_make_ray_point(&r, point, l->tr_centre);
-        for (TR_generic_object* i : w->tr_objects)            /* finding intersection */
+        for (BaseObject* i : w->tr_objects)            /* finding intersection */
             if (i != cur_obj)
             {
                 t = i->TR_intersect(&r);
@@ -129,19 +126,19 @@ Vector TR_screen_v;
      * --------                                              *
     \* * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-    Vector& TRI_direct_ray(Vector& light, TR_world *w, TR_ray *r, TR_generic_object* cur_obj, int depth)
+    Vec3d& TRI_direct_ray(Vec3d& light, Scene *w, Ray *r, BaseObject* cur_obj, int depth)
     {
-        TR_generic_object* obj = nullptr;
+        BaseObject* obj = nullptr;
         float minInterDist = 1E5f, t = 0.0f;
-        TR_ray rr;
-        Vector where;                 /* current intersection */
-        Vector normal;                /* of the current intersection */
-        Vector viewer, reflect, rlight;
+        Ray rr;
+        Vec3d where;                 /* current intersection */
+        Vec3d normal;                /* of the current intersection */
+        Vec3d viewer, reflect, rlight;
         size_t lsize = w->tr_point_lights.size();
 
         if (depth != 0)
         {
-            for (TR_generic_object* i : w->tr_objects)           /* finding intersection */
+            for (BaseObject* i : w->tr_objects)           /* finding intersection */
                 if (i != cur_obj)                           /* with itself, no sense */
                 {
                     t = i->TR_intersect(r);
@@ -153,9 +150,9 @@ Vector TR_screen_v;
                 }
             if (obj)                           /* if some objects intersected */
             {
-                light[0] += obj->tr_material.tr_ambient[0] * w->tr_ambient[0];
-                light[1] += obj->tr_material.tr_ambient[1] * w->tr_ambient[1];
-                light[2] += obj->tr_material.tr_ambient[2] * w->tr_ambient[2];
+                light.x += obj->tr_material.tr_ambient.x * w->tr_ambient.x;
+                light.y += obj->tr_material.tr_ambient.y * w->tr_ambient.y;
+                light.z += obj->tr_material.tr_ambient.z * w->tr_ambient.z;
 
                 TRI_on_ray(where, r, minInterDist);           /* intersection's coordinate */
 
@@ -169,15 +166,14 @@ Vector TR_screen_v;
 
                 if (TR_rendering_type & TR_REFLECT)
                 {
-                    V_unit_vector(viewer, where, TR_viewer);
-                    reflect = normal * (V_scalar_product(normal, viewer) * 2);
-                    reflect = reflect - viewer;
+                    viewer = (TR_viewer - where).unit();
+                    reflect = normal * normal.dot(viewer) * 2 - viewer;
                     TRI_make_ray_vector(&rr, where, reflect); /* prepare recursive ray */
 
                     TRI_direct_ray(rlight.zero(), w, &rr, obj, depth - 1);
-                    light[0] += rlight[0] * obj->tr_material.tr_reflect;
-                    light[1] += rlight[1] * obj->tr_material.tr_reflect;
-                    light[2] += rlight[2] * obj->tr_material.tr_reflect;
+                    light.x += rlight.x * obj->tr_material.tr_reflect;
+                    light.y += rlight.y * obj->tr_material.tr_reflect;
+                    light.z += rlight.z * obj->tr_material.tr_reflect;
                 }
             }
         }
@@ -220,14 +216,14 @@ Vector TR_screen_v;
      * --------                                               *
     \**********************************************************/
 
-    float TR_sphere::TR_intersect(TR_ray *r)
+    float Sphere::TR_intersect(Ray *r)
     {
         float a, b, c, det;
-        Vector d;
+        Vec3d d;
 
-        a = V_scalar_product(r->tr_codirected, r->tr_codirected);
-        b = 2 * V_scalar_product(r->tr_codirected, d = (r->tr_start - tr_centre));
-        c = V_scalar_product(d, d) - tr_radius*tr_radius;
+        a = r->tr_codirected.dot(r->tr_codirected);
+        b = 2 * r->tr_codirected.dot(d = (r->tr_start - tr_centre));
+        c = d.dot(d) - tr_radius * tr_radius;
 
         //根的判断
         det = b * b - 4 * a * c;
@@ -245,10 +241,9 @@ Vector TR_screen_v;
      * --------                                               *
     \**********************************************************/
 
-    Vector& TR_sphere::TR_normal(Vector& normal, Vector& where)
+    Vec3d& Sphere::TR_normal(Vec3d& normal, Vec3d& where)
     {
-        V_unit_vector(normal, tr_centre, where);  /* from the centre */
-        return(normal);
+        return normal=(where - tr_centre).unit();
     }
 
     /**********************************************************\
@@ -258,21 +253,12 @@ Vector TR_screen_v;
 
     //计算平面方程和边的投影公式
     //多边形的初始化
-    void TR_polygon::TR_init()
+    void TPolygon::TR_init()
     {
-        Vector a(tr_vertices[2], tr_vertices[1]);
-        Vector b(tr_vertices[1], tr_vertices[0]);
-
-        V_vector_product(tr_normal, a, b);        /* normal to the plane */
-
-        a.zero();                                 /* making it unit length */
-        V_unit_vector(tr_normal, a, tr_normal);
+        tr_normal = (Vec3d(tr_vertices[2], tr_vertices[1]) * Vec3d(tr_vertices[1], tr_vertices[0])).unit();        /* normal to the plane */
 
         for (size_t i = 0; i < tr_vertices.size() - 1; ++i)           /* finding equations for edges */
-        {
-            V_vector_product(b, tr_normal, Vector(tr_vertices[i], tr_vertices[i + 1]));
-            tr_edges.push_back(Plane(b, tr_vertices[i]));
-        }
+            tr_edges.push_back(Plane(tr_normal * Vec3d(tr_vertices[i], tr_vertices[i + 1]), tr_vertices[i]));
     }
 
     /**********************************************************\
@@ -282,25 +268,28 @@ Vector TR_screen_v;
      * --------                                               *
     \**********************************************************/
 
-    float TR_polygon::TR_intersect(TR_ray *r)
+    float TPolygon::TR_intersect(Ray *r)
     {
-        Vector a;
-        float t, s1, s2;
+        Vec3d a(tr_vertices[0] - r->tr_start);
+        float t, s2 = r->tr_codirected.dot(tr_normal);
         size_t size = tr_vertices.size() - 1;
 
-        a = tr_vertices[0] - r->tr_start;
-        s1 = V_scalar_product(a, tr_normal);
-        s2 = V_scalar_product(r->tr_codirected, tr_normal);
-
-        if (s2 == 0) return -1.0f; else t = s1 / s2;
-        if (t < 0) return -1.0f;
-
-        TRI_on_ray(a, r, t);
-
-        for (size_t i = 0; i < size; i++)
-            if (tr_edges[i].vertexOnPlane(a) > 0.0f) return -1.0f;
-
-        return t;
+        if (s2 == 0) 
+            return -1.0f; 
+        else
+        {
+            t = a.dot(tr_normal) / s2;
+            if (t < 0) 
+                return -1.0f;
+            else
+            {
+                TRI_on_ray(a, r, t);
+                for (size_t i = 0; i < size; i++)
+                    if (tr_edges[i].vertexOnPlane(a) > 0.0f)\
+                        return -1.0f;
+                return t;
+            }
+        }
     }
 
     /**********************************************************\
@@ -310,7 +299,7 @@ Vector TR_screen_v;
      * --------                                               *
     \**********************************************************/
 
-    Vector& TR_polygon::TR_normal(Vector& normal, Vector& where)
+    Vec3d& TPolygon::TR_normal(Vec3d& normal, Vec3d& where)
     {
         normal.set(tr_normal);
         return normal;
@@ -320,9 +309,9 @@ Vector TR_screen_v;
      * Initialisez all entities in the world.                 *
     \**********************************************************/
 
-    void TR_init_world(TR_world *w)
+    void TR_init_world(Scene *w)
     {
-        for (TR_generic_object* o : w->tr_objects)
+        for (BaseObject* o : w->tr_objects)
             o->TR_init();
     }
 
@@ -330,13 +319,13 @@ Vector TR_screen_v;
      * Ray tracing a scene for all pixels.                    *
     \**********************************************************/
 
-    void TR_trace_world(TR_world *w, int depth)
+    void TR_trace_world(Scene *w, int depth)
     {
         float x, y;
-        Vector l;//light
-        Vector point;
+        Vec3d l;//light
+        Vec3d point;
         int coord[2];
-        TR_ray r;
+        Ray r;
 
         for (coord[0] = 0; coord[0] < HW_SCREEN_X_SIZE; ++coord[0])
             for (coord[1] = 0; coord[1] < HW_SCREEN_Y_SIZE; ++coord[1])           /* for each pixel on screen */
@@ -344,9 +333,7 @@ Vector TR_screen_v;
                 x = coord[0] - HW_SCREEN_X_SIZE / 2;
                 y = coord[1] - HW_SCREEN_Y_SIZE / 2;                  /* plane coordinates */
 
-                point[0] = TR_screen_u[0] * x + TR_screen_v[0] * y + TR_screen[0];
-                point[1] = TR_screen_u[1] * x + TR_screen_v[1] * y + TR_screen[1];
-                point[2] = TR_screen_u[2] * x + TR_screen_v[2] * y + TR_screen[2];
+                point = (TR_screen_u*x) + (TR_screen_v * y) + TR_screen;
 
                 //从两个点(point and TR_viewer)构建ray
                 TRI_make_ray_point(&r, TR_viewer, point);
@@ -356,6 +343,6 @@ Vector TR_screen_v;
 
                 //Setting a pixel
                 G_pixel(coord,
-                    CL_colour(l[0] * CL_COLOUR_LEVELS, l[1] * CL_COLOUR_LEVELS, l[2] * CL_COLOUR_LEVELS));
+                    CL_colour(l.x * CL_COLOUR_LEVELS, l.y * CL_COLOUR_LEVELS, l.z * CL_COLOUR_LEVELS));
             }
     }

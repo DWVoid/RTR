@@ -135,14 +135,14 @@
     <ClCompile Include="Graphics.cpp" />
     <ClCompile Include="RayTracing.cpp" />
     <ClCompile Include="Trace.cpp" />
-    <ClCompile Include="Vector.cpp" />
+    <ClCompile Include="Algebra.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Colour.h" />
     <ClInclude Include="Graphics.h" />
     <ClInclude Include="RayTracing.h" />
     <ClInclude Include="Trace.h" />
-    <ClInclude Include="Vector.h" />
+    <ClInclude Include="Algebra.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
