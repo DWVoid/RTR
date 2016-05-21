@@ -23,10 +23,14 @@ struct PointLight
 	Vec3d tr_intensity;
 };
 
-struct Ray
+class Ray
 {
+public:
 	Vec3d tr_start;              /* origin of the ray */
 	Vec3d tr_codirected;         /* a co-directed vector */
+    Ray();
+    Ray(const Vec3d& from, const Vec3d& vector);
+    Vec3d onRay(const float f) const;
 };
 
 class BaseObject                    /* for storage in the world */
@@ -57,9 +61,6 @@ public:
     float TR_intersect(Ray *r);
     Vec3d& TR_normal(Vec3d& normal, Vec3d& where);
 };
-
-#define TR_MAX_POINT_LIGHTS 10
-#define TR_MAX_SPHERES      10
 
 class Camera
 {
