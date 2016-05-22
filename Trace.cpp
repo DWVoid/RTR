@@ -9,21 +9,6 @@ Vec3d TR_screen;              /* origine of the screen */
 Vec3d TR_screen_u;            /* screen orientation vectors */
 Vec3d TR_screen_v;
 
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * *\
- * Constructing a ray from two points.                   *
- *                                                       *
- * RETURNS: Constructed ray.                             *
- * --------                                              *
-\* * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-Ray *TRI_make_ray_point(Ray *r, Vec3d& from, Vec3d& to)
-{
-    //设置光线矢量的起始点
-    r->tr_start = from;
-    //计算光线的矢量方向
-    r->tr_codirected = to - from;
-    return r;
-}
-
 Ray::Ray()
 {
 }
@@ -49,12 +34,12 @@ Vec3d Ray::onRay(const float f) const
     return Vec3d(tr_start + tr_codirected * f);
 }
 
-    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * *\
-     * Computing illumination of a intersected surface point.*
-     *                                                       *
-     * RETURNS: An RGB triple.                               *
-     * --------                                              *
-    \* * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * *\
+* Computing illumination of a intersected surface point.*
+*                                                       *
+* RETURNS: An RGB triple.                               *
+* --------                                              *
+\* * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 Vec3d& TRI_illuminate(Vec3d& light, PointLight *l, Material *material,
     Vec3d& normal, Vec3d& where, Vec3d& viewer)
@@ -85,7 +70,7 @@ Vec3d& TRI_illuminate(Vec3d& light, PointLight *l, Material *material,
 bool TRI_shadow_ray(Scene *w, PointLight *l, Vec3d& point, BaseObject* cur_obj)
 {
     float t = 0.0;
-    Ray r(point, l->tr_centre);
+    Ray r(point, l->tr_centre - point);
     for (BaseObject* i : w->tr_objects)            /* finding intersection */
         if (i != cur_obj)
         {
@@ -148,13 +133,13 @@ Vec3d& TRI_direct_ray(Vec3d& light, Scene *w, Ray *r, BaseObject* cur_obj, int d
     return(light);
 }
 
-    /**********************************************************\
-     * Setting the camera parameter, where TR_viewer stores   *
-     * position of the viewer's eye, TR_screen origine of the *
-     * projection plane, TR_screen_u and TR_screen_v          *
-     * orientation of the projection plane in the world       *
-     * space.                                                 *
-    \**********************************************************/
+/**********************************************************\
+* Setting the camera parameter, where TR_viewer stores   *
+* position of the viewer's eye, TR_screen origine of the *
+* projection plane, TR_screen_u and TR_screen_v          *
+* orientation of the projection plane in the world       *
+* space.                                                 *
+\**********************************************************/
  
 void TR_set_camera(float viewer_x, float viewer_y, float viewer_z,
     float screen_x, float screen_y, float screen_z,
@@ -168,12 +153,12 @@ void TR_set_camera(float viewer_x, float viewer_y, float viewer_z,
     TR_screen_v.set(screen_vx, screen_vy, screen_vz);
 }
 
-    /**********************************************************\
-     * Finding intersection of a ray with a sphere.           *
-     *                                                        *
-     * RETURNS: Distance from the origine of the ray.         *
-     * --------                                               *
-    \**********************************************************/
+/**********************************************************\
+* Finding intersection of a ray with a sphere.           *
+*                                                        *
+* RETURNS: Distance from the origine of the ray.         *
+* --------                                               *
+\**********************************************************/
 
 float Sphere::TR_intersect(Ray *r)
 {
@@ -193,12 +178,12 @@ float Sphere::TR_intersect(Ray *r)
     return(((a > 0) ? -sqrt(det) : sqrt(det)) - b) / (2 * a);/* closest intersection */
 }
 
-    /**********************************************************\
-     * Computes sphere's normal for a point on a shpere.      *
-     *                                                        *
-     * RETURNS: The normal vector.                            *
-     * --------                                               *
-    \**********************************************************/
+/**********************************************************\
+* Computes sphere's normal for a point on a shpere.      *
+*                                                        *
+* RETURNS: The normal vector.                            *
+* --------                                               *
+\**********************************************************/
 
 Vec3d& Sphere::TR_normal(Vec3d& normal, Vec3d& where)
 {
@@ -291,7 +276,7 @@ void TR_trace_world(Scene *w, int depth)
             y = coord[1] - HW_SCREEN_Y_SIZE / 2;                  /* plane coordinates */
 
             //从两个点(point and TR_viewer)构建ray
-            r = Ray(TR_viewer, (TR_screen_u * x) + (TR_screen_v * y) + TR_screen);
+            r = Ray(TR_viewer, (TR_screen_u * x) + (TR_screen_v * y) + TR_screen - TR_viewer);
 
             //关键中的关键，计算环境光，返回pixel的照明度
             TRI_direct_ray(l.zero(), w, &r, nullptr, depth);
