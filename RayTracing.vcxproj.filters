@@ -11,36 +11,36 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Colour.cpp">
+    <ClCompile Include="src\Algebra.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Trace.cpp">
+    <ClCompile Include="src\Colour.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="RayTracing.cpp">
+    <ClCompile Include="src\Graphics.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Graphics.cpp">
+    <ClCompile Include="src\RayTracing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Algebra.cpp">
+    <ClCompile Include="src\Trace.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Colour.h">
+    <ClInclude Include="src\Algebra.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="RayTracing.h">
+    <ClInclude Include="src\Colour.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Graphics.h">
+    <ClInclude Include="src\Graphics.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Trace.h">
+    <ClInclude Include="src\RayTracing.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Algebra.h">
+    <ClInclude Include="src\Trace.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

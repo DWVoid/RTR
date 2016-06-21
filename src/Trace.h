@@ -2,90 +2,100 @@
 #define _TRACE_H_
 
 #include <vector>
-#include "Algebra.h"     
+#include <memory>
+#include "Algebra.h"
+
 struct Material
 {
-	//环境反射，RGB矢量
-	Vec3d tr_ambient;            /* coefs of ambient reflection */
-   //漫反射，RGB矢量
-	Vec3d tr_diffuse;            /* coefs of diffuse reflection */
-   //镜面反射
-	float tr_specular;                         /* coef of specular reflection */
-   //镜面反射系数
-	float tr_exponent;                         /* specular exponent */
-   //递归光线
-	float tr_reflect;                          /* recursive ray */
+    Vec3d ambient;            // 环境反射 - coefs of ambient reflection
+    Vec3d diffuse;            // 漫反射 - coefs of diffuse reflection
+    double specular;           // 镜面反射 - coef of specular reflection
+    double exponent;           // 镜面反射系数 - specular exponent
+    double reflect;            // 递归光线 - recursive ray
 };
 
 struct PointLight
 {
-	Vec3d tr_centre;             /* point light source */
-	Vec3d tr_intensity;
+    Vec3d centre;             /* point light source */
+    Vec3d intensity;
 };
 
 class Ray
 {
 public:
-	Vec3d tr_start;              /* origin of the ray */
-	Vec3d tr_codirected;         /* a co-directed vector */
-    Ray();
+    Vec3d start;              // origin of the ray 
+    Vec3d codirected;         // a co-directed vector 
+    Ray() = default;
     Ray(const Vec3d& from, const Vec3d& vector);
-    Vec3d onRay(const float f) const;
+    Vec3d onRay(const double f) const;
 };
 
-class BaseObject                    /* for storage in the world */
+class BaseObject                 
 {
 public:
-    Material tr_material;              /* material it is made of */
-    virtual void TR_init() {};
-    virtual float TR_intersect(Ray *r) = 0;
-    virtual Vec3d& TR_normal(Vec3d& normal, Vec3d& where) = 0;
+    Material material;              // material it is made of 
+    virtual void init() {};
+    virtual double intersect(const Ray& r) const = 0;
+    virtual Vec3d normal(const Vec3d& where) const = 0;
+    virtual ~BaseObject() = default;
 };
 
 class Sphere :public BaseObject
 {
 public:
-    Vec3d tr_centre;             /* sphere's centre */
-    float tr_radius;
-    float TR_intersect(Ray *r);
-    Vec3d& TR_normal(Vec3d& normal, Vec3d& where);
+    Vec3d centre;
+    double radius;
+    double intersect(const Ray& r) const;
+    Vec3d normal(const Vec3d& where) const;
 };
 
 class TPolygon:public BaseObject
 {
 public:
-    Vec3d tr_normal;
-    std::vector<Plane> tr_edges;   
-    std::vector<Vec3d> tr_vertices;
-    void TR_init();
-    float TR_intersect(Ray *r);
-    Vec3d& TR_normal(Vec3d& normal, Vec3d& where);
+    Vec3d inormal;
+    std::vector<Plane> edges;   
+    std::vector<Vec3d> vertices;
+    void init();
+    double intersect(const Ray& r) const;
+    Vec3d normal(const Vec3d& where) const;
 };
 
 class Camera
 {
 public:
-
+    Vec3d viewer;              /* position of the viewer */
+    Vec3d screen;              /* origine of the screen */
+    Vec3d screenU;            /* screen orientation vectors */
+    Vec3d screenV;
+    Camera(
+        const Vec3d& _viewer, const Vec3d& _screen,
+        const Vec3d& _screenU, const Vec3d& _screenV);
+    void set(
+        const Vec3d& _viewer, const Vec3d& _screen,
+        const Vec3d& _screenU, const Vec3d& _screenV);
+    Ray genRay(const double xpos, const double ypos) const;
 };
 
-class PerspectiveCamera : public Camera
-{
-
-};
 class Scene
 {
 public:
-    Vec3d tr_ambient;            /* illumination of the world */
-    std::vector<PointLight*> tr_point_lights;
-    std::vector<BaseObject*> tr_objects;
+    Vec3d ambient;            /* illumination of the world */
+    std::vector<PointLight*> point_lights;
+    std::vector<BaseObject*> objects;
+    void illuminate(
+        Vec3d& light, PointLight *l, const Material& material,
+        const Vec3d& normal, const Vec3d& where, const Vec3d& viewer);
+    bool shadowRay(PointLight *l, const Vec3d& point, BaseObject* cur_obj) const;
+    void directRay(Vec3d& light, const Ray& r, const Vec3d& viewer, BaseObject* cur_obj, const int depth);
 };
 
-void TR_set_camera(float viewer_x,float viewer_y,float viewer_z,
-                   float screen_x,float screen_y,float screen_z,
-                   float screen_ux,float screen_uy,float screen_uz,
-                   float screen_vx,float screen_vy,float screen_vz
-                  );
-void TR_init_world(Scene *w);
-void TR_trace_world(Scene *w,int depth);
+class Renderer
+{
+public:
+    void init();
+    std::shared_ptr<Scene> scene;
+    std::vector<std::shared_ptr<Camera> > cameras;
+    void capture(const int xSize, const int ySize, const int camID, const int depth = 10);
+};
 
 #endif

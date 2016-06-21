@@ -6,8 +6,8 @@ HW_pixel *CL_intensities;                   /* intensity table */
 //初始化内部查找表，具体不是特别清楚
 void CL_init_colour(void)
 {
-    for (size_t i = 0;i < CL_COLOUR_LEVELS; ++i)
-        for (size_t j = 0;j < CL_LIGHT_LEVELS; ++j)
+    for (int i = 0;i < CL_COLOUR_LEVELS; ++i)
+        for (int j = 0;j < CL_LIGHT_LEVELS; ++j)
             //CL_LIGHT_MASK is for clamping light??? 0xff???
             CL_div[i][j] = (i*j) / CL_LIGHT_MASK;
 }

@@ -6,7 +6,7 @@ Vec3d::Vec3d()
 {
 }
 
-Vec3d::Vec3d(float _x, float _y, float _z):
+Vec3d::Vec3d(double _x, double _y, double _z):
     x(_x), y(_y), z(_z)
 {
 }
@@ -28,7 +28,7 @@ Vec3d Vec3d::operator+(const Vec3d & b) const
     return Vec3d(x + b.x, y + b.y, z + b.z);
 }
 
-Vec3d Vec3d::operator*(const float b) const
+Vec3d Vec3d::operator*(const double b) const
 {
     return Vec3d(x * b, y * b, z * b);
 }
@@ -41,33 +41,33 @@ Vec3d Vec3d::operator*(const Vec3d & b) const
 
 Vec3d& Vec3d::operator-=(const Vec3d & b)
 {
-	x -= b.x; y -= b.y; z -= b.z;
-	return *this;
+    x -= b.x; y -= b.y; z -= b.z;
+    return *this;
 }
 
 Vec3d& Vec3d::operator+=(const Vec3d & b)
 {
-	x += b.x; y += b.y; z += b.z;
-	return *this;
+    x += b.x; y += b.y; z += b.z;
+    return *this;
 }
 
-Vec3d& Vec3d::operator*=(const float b)
+Vec3d& Vec3d::operator*=(const double b)
 {
-	x *= b, y *= b, z *= b;
-	return *this;
+    x *= b, y *= b, z *= b;
+    return *this;
 }
 
 Vec3d& Vec3d::operator*=(const Vec3d & b) 
 {
-	x = y * b.z - z * b.y;
-	y = z * b.x - x * b.z;
-	z = x * b.y - y * b.x;
-	return *this;
+    x = y * b.z - z * b.y;
+    y = z * b.x - x * b.z;
+    z = x * b.y - y * b.x;
+    return *this;
 }
 
 Vec3d Vec3d::blend(const Vec3d & b) const
 {
-	return Vec3d(x * b.x, y * b.y, z * b.z);
+    return Vec3d(x * b.x, y * b.y, z * b.z);
 }
 
 Vec3d & Vec3d::zero()
@@ -84,7 +84,7 @@ Vec3d & Vec3d::zero()
      return *this;
  }
 
- Vec3d & Vec3d::set(const float _x, const float _y, const float _z)
+ Vec3d & Vec3d::set(const double _x, const double _y, const double _z)
  {
      x = _x;
      y = _y;
@@ -92,18 +92,18 @@ Vec3d & Vec3d::zero()
      return *this;
  }
 
- float Vec3d::length() const
+ double Vec3d::length() const
  {
      return (sqrt(x * x + y * y + z * z));
  }
 
  Vec3d Vec3d::unit() const
  {
-     const float l = length();
+     const double l = length();
      return Vec3d(x / l, y / l, z / l);
  }
 
- float Vec3d::dot(const Vec3d & b) const
+ double Vec3d::dot(const Vec3d & b) const
  {
     return(x * b.x + y * b.y + z * b.z);
  }
@@ -125,7 +125,7 @@ Vec3d & Vec3d::zero()
  *          "-" otherwise.                                *
  \**********************************************************/
 
- float Plane::vertexOnPlane(Vec3d & vertex) const
+ double Plane::vertexOnPlane(Vec3d & vertex) const
  {
      return vertex.x * v[0] + vertex.y * v[1] + vertex.z * v[2] + v[3];
  }

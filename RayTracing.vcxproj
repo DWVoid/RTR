@@ -131,18 +131,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Colour.cpp" />
-    <ClCompile Include="Graphics.cpp" />
-    <ClCompile Include="RayTracing.cpp" />
-    <ClCompile Include="Trace.cpp" />
-    <ClCompile Include="Algebra.cpp" />
+    <ClCompile Include="src\Colour.cpp" />
+    <ClCompile Include="src\Graphics.cpp" />
+    <ClCompile Include="src\RayTracing.cpp" />
+    <ClCompile Include="src\Trace.cpp" />
+    <ClCompile Include="src\Algebra.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Colour.h" />
-    <ClInclude Include="Graphics.h" />
-    <ClInclude Include="RayTracing.h" />
-    <ClInclude Include="Trace.h" />
-    <ClInclude Include="Algebra.h" />
+    <ClInclude Include="src\Colour.h" />
+    <ClInclude Include="src\Graphics.h" />
+    <ClInclude Include="src\RayTracing.h" />
+    <ClInclude Include="src\Trace.h" />
+    <ClInclude Include="src\Algebra.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

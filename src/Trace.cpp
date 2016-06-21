@@ -1,24 +1,14 @@
 #include "Graphics.h"           /* G_pixel */
-#include "Colour.h"               /* colour related */
-#include "Trace.h"                 /* self definition */
-#include <math.h>                           /* sqrt */
-
-int TR_rendering_type;                      /* rendering options */
-Vec3d TR_viewer;              /* position of the viewer */
-Vec3d TR_screen;              /* origine of the screen */
-Vec3d TR_screen_u;            /* screen orientation vectors */
-Vec3d TR_screen_v;
-
-Ray::Ray()
-{
-}
+#include "Colour.h"             /* colour related */
+#include "Trace.h"              /* self definition */
+#include <math.h>               /* sqrt */
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * *\
 * Constructing a ray from a point and a vector.         *
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 Ray::Ray(const Vec3d& from, const Vec3d& vector) :
-    tr_start(from), tr_codirected(vector)
+    start(from), codirected(vector)
 {
 }
 
@@ -29,128 +19,9 @@ Ray::Ray(const Vec3d& from, const Vec3d& vector) :
 * --------                                              *
 \* * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-Vec3d Ray::onRay(const float f) const
+Vec3d Ray::onRay(const double f) const
 {
-    return Vec3d(tr_start + tr_codirected * f);
-}
-
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * *\
-* Computing illumination of a intersected surface point.*
-*                                                       *
-* RETURNS: An RGB triple.                               *
-* --------                                              *
-\* * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
-Vec3d& TRI_illuminate(Vec3d& light, PointLight *l, Material *material,
-    Vec3d& normal, Vec3d& where, Vec3d& viewer)
-{
-    float diffuseratio, specularratio;
-
-    Vec3d lightvector((l->tr_centre - where).unit());
-
-    if ((diffuseratio = normal.dot(lightvector)) > 0)
-    {
-        light += l->tr_intensity.blend(material->tr_diffuse) * diffuseratio;//diffuse term 
-
-        if ((specularratio = (normal * (diffuseratio * 2) - lightvector).dot((viewer - where).unit())) > 0)
-            light += l->tr_intensity * material->tr_specular * pow(specularratio, (int)material->tr_exponent);
-        //specular term
-    }
-    return(light);
-}
-
-    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * *\
-     * Casting a ray towards a lightsource to find out if    *
-     * it is hidden by other objects or not.                 *
-     *                                                       *
-     * RETURNS: 1 light source visible; 0 otherwise.         *
-     * --------                                              *
-    \* * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
-bool TRI_shadow_ray(Scene *w, PointLight *l, Vec3d& point, BaseObject* cur_obj)
-{
-    float t = 0.0;
-    Ray r(point, l->tr_centre - point);
-    for (BaseObject* i : w->tr_objects)            /* finding intersection */
-        if (i != cur_obj)
-        {
-            t = i->TR_intersect(&r);
-            if ((t > 0) && (t <= 1)) return true;             /* first intersection is enough */
-        }
-    return false;
-}
-
-    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * *\
-     * Casting a ray into the world, recursing to compute    *
-     * environmental reflections.                            *
-     *                                                       *
-     * RETURNS: Illumination for the pixel.                  *
-     * --------                                              *
-    \* * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-
-Vec3d& TRI_direct_ray(Vec3d& light, Scene *w, Ray *r, BaseObject* cur_obj, int depth)
-{
-    BaseObject* obj = nullptr;
-    float minInterDist = 1E5f, t = 0.0f;
-    Vec3d where;                 /* current intersection */
-    Vec3d normal;                /* of the current intersection */
-    Vec3d viewer, reflect, rlight;
-    size_t lsize = w->tr_point_lights.size();
-
-    if (depth != 0)
-    {
-        for (BaseObject* i : w->tr_objects)           /* finding intersection */
-            if (i != cur_obj)                           /* with itself, no sense */
-            {
-                t = i->TR_intersect(r);
-                if ((t > 0) && (t < minInterDist))/* not behind the ray */
-                {
-                    minInterDist = t;/* finding closest intersection */
-                    obj = i;
-                }                /* a valid intersection */
-            }
-        if (obj)                           //got intersection
-        {
-            light += obj->tr_material.tr_ambient.blend(w->tr_ambient);
-
-            where = r->onRay(minInterDist);           /* intersection's coordinate */
-
-            obj->TR_normal(normal, where);
-
-            for (size_t i = 0; i < lsize; ++i)     /* illumination from each light */
-                if (!TRI_shadow_ray(w, w->tr_point_lights[i], where, obj))
-                    TRI_illuminate(light, w->tr_point_lights[i], &obj->tr_material,
-                        normal, where, TR_viewer);
-
-            viewer = (TR_viewer - where).unit();
-            reflect = normal * normal.dot(viewer) * 2 - viewer;
-            Ray rr(where, reflect); /* prepare recursive ray */
-
-            TRI_direct_ray(rlight.zero(), w, &rr, obj, depth - 1);
-            light += rlight * obj->tr_material.tr_reflect;
-        }
-    }
-    return(light);
-}
-
-/**********************************************************\
-* Setting the camera parameter, where TR_viewer stores   *
-* position of the viewer's eye, TR_screen origine of the *
-* projection plane, TR_screen_u and TR_screen_v          *
-* orientation of the projection plane in the world       *
-* space.                                                 *
-\**********************************************************/
- 
-void TR_set_camera(float viewer_x, float viewer_y, float viewer_z,
-    float screen_x, float screen_y, float screen_z,
-    float screen_ux, float screen_uy, float screen_uz,
-    float screen_vx, float screen_vy, float screen_vz
-    )
-{
-    TR_viewer.set(viewer_x, viewer_y, viewer_z);
-    TR_screen.set(screen_x, screen_y, screen_z);
-    TR_screen_u.set(screen_ux, screen_uy, screen_uz);
-    TR_screen_v.set(screen_vx, screen_vy, screen_vz);
+    return Vec3d(start + codirected * f);
 }
 
 /**********************************************************\
@@ -160,14 +31,14 @@ void TR_set_camera(float viewer_x, float viewer_y, float viewer_z,
 * --------                                               *
 \**********************************************************/
 
-float Sphere::TR_intersect(Ray *r)
+double Sphere::intersect(const Ray& r) const
 {
-    float a, b, c, det;
+    double a, b, c, det;
     Vec3d d;
 
-    a = r->tr_codirected.dot(r->tr_codirected);
-    b = 2 * r->tr_codirected.dot(d = (r->tr_start - tr_centre));
-    c = d.dot(d) - tr_radius * tr_radius;
+    a = r.codirected.dot(r.codirected);
+    b = 2 * r.codirected.dot(d = (r.start - centre));
+    c = d.dot(d) - radius * radius;
 
     //根的判断
     det = b * b - 4 * a * c;
@@ -185,9 +56,9 @@ float Sphere::TR_intersect(Ray *r)
 * --------                                               *
 \**********************************************************/
 
-Vec3d& Sphere::TR_normal(Vec3d& normal, Vec3d& where)
+Vec3d Sphere::normal(const Vec3d& where) const
 {
-    return normal = (where - tr_centre).unit();
+    return ((where - centre).unit());
 }
 
 /**********************************************************\
@@ -195,13 +66,13 @@ Vec3d& Sphere::TR_normal(Vec3d& normal, Vec3d& where)
 * the edges.                                             *
 \**********************************************************/
 
-void TPolygon::TR_init()
+void TPolygon::init()
 {
-    tr_normal = (Vec3d(tr_vertices[2], tr_vertices[1]) * Vec3d(tr_vertices[1], tr_vertices[0])).unit();
+    inormal = (Vec3d(vertices[2], vertices[1]) * Vec3d(vertices[1], vertices[0])).unit();
     /* normal to the plane */
 
-    for (size_t i = 0; i < tr_vertices.size() - 1; ++i)           /* finding equations for edges */
-        tr_edges.push_back(Plane(tr_normal * Vec3d(tr_vertices[i], tr_vertices[i + 1]), tr_vertices[i]));
+    for (size_t i = 0; i < vertices.size() - 1; ++i)           /* finding equations for edges */
+        edges.push_back(Plane(inormal * Vec3d(vertices[i], vertices[i + 1]), vertices[i]));
 }
 
 /**********************************************************\
@@ -211,24 +82,24 @@ void TPolygon::TR_init()
 * --------                                               *
 \**********************************************************/
 
-float TPolygon::TR_intersect(Ray *r)
+double TPolygon::intersect(const Ray& r) const
 {
-    Vec3d a(tr_vertices[0] - r->tr_start);
-    float t, s2 = r->tr_codirected.dot(tr_normal);
-    size_t size = tr_vertices.size() - 1;
+    Vec3d a(vertices[0] - r.start);
+    double t, s2 = r.codirected.dot(inormal);
+    int size = vertices.size() - 1;
 
     if (s2 == 0)
         return -1.0f;
     else
     {
-        t = a.dot(tr_normal) / s2;
+        t = a.dot(inormal) / s2;
         if (t < 0)
             return -1.0f;
         else
         {
-            a = r->onRay(t);
-            for (size_t i = 0; i < size; i++)
-                if (tr_edges[i].vertexOnPlane(a) > 0.0f)
+            a = r.onRay(t);
+            for (int i = 0; i < size; i++)
+                if (edges[i].vertexOnPlane(a) > 0.0f)
                     return -1.0f;
             return t;
         }
@@ -242,47 +113,149 @@ float TPolygon::TR_intersect(Ray *r)
 * --------                                               *
 \**********************************************************/
 
-Vec3d& TPolygon::TR_normal(Vec3d& normal, Vec3d& where)
+Vec3d TPolygon::normal(const Vec3d& where) const
 {
-    normal.set(tr_normal);
-    return normal;
+    return inormal;
 }
 
-/**********************************************************\
-* Initialisez all entities in the world.                 *
-\**********************************************************/
-
-void TR_init_world(Scene *w)
+Camera::Camera(const Vec3d & _viewer, const Vec3d & _screen, const Vec3d & _screenU, const Vec3d & _screenV):
+    viewer(_viewer), screen(_screen), screenU(_screenU), screenV(_screenV)
 {
-    for (BaseObject* o : w->tr_objects)
-        o->TR_init();
 }
 
-/**********************************************************\
-* Ray tracing a scene for all pixels.                    *
-\**********************************************************/
+///Setting the camera parameter, where viewer stores   
+///position of the viewer's eye, screen origine of the 
+///projection plane, screen_u and screen_v orientation 
+///of the projection plane in the world space.  
 
-void TR_trace_world(Scene *w, int depth)
+void Camera::set(const Vec3d & _viewer, const Vec3d & _screen, const Vec3d & _screenU, const Vec3d & _screenV)
 {
-    float x, y;
+    viewer.set(_viewer);
+    screen.set(_screen);
+    screenU.set(_screenU);
+    screenV.set(_screenV);
+}
+
+Ray Camera::genRay(const double xpos, const double ypos) const
+{
+    return Ray(viewer, (screenU * xpos) + (screenV * ypos) + screen - viewer);
+}
+
+void Renderer::init()
+{
+    for (BaseObject* o : scene->objects)
+        o->init();
+}
+
+void Renderer::capture(const int xSize, const int ySize, const int camID, const int depth)
+{
+    double x, y;
     Vec3d l;//light
     int coord[2];
     Ray r;
 
-    for (coord[0] = 0; coord[0] < HW_SCREEN_X_SIZE; ++coord[0])
-        for (coord[1] = 0; coord[1] < HW_SCREEN_Y_SIZE; ++coord[1])           /* for each pixel on screen */
+    for (coord[0] = 0; coord[0] < xSize; ++coord[0])
+        for (coord[1] = 0; coord[1] < ySize; ++coord[1])           /* for each pixel on screen */
         {
-            x = coord[0] - HW_SCREEN_X_SIZE / 2;
-            y = coord[1] - HW_SCREEN_Y_SIZE / 2;                  /* plane coordinates */
-
-            //从两个点(point and TR_viewer)构建ray
-            r = Ray(TR_viewer, (TR_screen_u * x) + (TR_screen_v * y) + TR_screen - TR_viewer);
+            x = coord[0] - xSize / 2;
+            y = coord[1] - ySize / 2;                  /* plane coordinates */
 
             //关键中的关键，计算环境光，返回pixel的照明度
-            TRI_direct_ray(l.zero(), w, &r, nullptr, depth);
+            scene->directRay(l.zero(), cameras[camID]->genRay(x, y), cameras[camID]->viewer, nullptr, depth);
 
             //Setting a pixel
             G_pixel(coord,
                 CL_colour(l.x * CL_COLOUR_LEVELS, l.y * CL_COLOUR_LEVELS, l.z * CL_COLOUR_LEVELS));
         }
+}
+
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * *\
+* Computing illumination of a intersected surface point.*
+*                                                       *
+* RETURNS: An RGB triple.                               *
+* --------                                              *
+\* * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+void Scene::illuminate(Vec3d & light, PointLight * l, const Material & material, const Vec3d & normal, const Vec3d & where, const Vec3d & viewer)
+{
+    double diffuseratio, specularratio;
+    Vec3d lightvector((l->centre - where).unit());
+    if ((diffuseratio = normal.dot(lightvector)) > 0)
+    {
+        light += l->intensity.blend(material.diffuse) * diffuseratio;//diffuse term 
+        if ((specularratio = (normal * (diffuseratio * 2) - lightvector).dot((viewer - where).unit())) > 0)
+            light += l->intensity * material.specular * pow(specularratio, (int)material.exponent);  //specular term
+    }
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * *\
+* Casting a ray towards a lightsource to find out if    *
+* it is hidden by other objects or not.                 *
+*                                                       *
+* RETURNS: 1 light source visible; 0 otherwise.         *
+* --------                                              *
+\* * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+bool Scene::shadowRay(PointLight * l, const Vec3d & point, BaseObject * cur_obj) const
+{
+    double t = 0.0;
+    Ray r(point, l->centre - point);
+    for (BaseObject* i : objects)            /* finding intersection */
+        if (i != cur_obj)
+        {
+            t = i->intersect(r);
+            if ((t > 0) && (t <= 1)) return true;             /* first intersection is enough */
+        }
+    return false;
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * *\
+* Casting a ray into the world, recursing to compute    *
+* environmental reflections.                            *
+*                                                       *
+* RETURNS: Illumination for the pixel.                  *
+* --------                                              *
+\* * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+void Scene::directRay(Vec3d & light, const Ray & r, const Vec3d& viewer, BaseObject * cur_obj, const int depth)
+{
+    BaseObject* obj = nullptr;
+    double minInterDist = 1E5f, t = 0.0f;
+    Vec3d where;                 /* current intersection */
+    Vec3d normal;                /* of the current intersection */
+    Vec3d _viewer, reflect, rlight;
+    int lsize = point_lights.size();
+
+    if (depth != 0)
+    {
+        for (BaseObject* i : objects)           /* finding intersection */
+            if (i != cur_obj)                           /* with itself, no sense */
+            {
+                t = i->intersect(r);
+                if ((t > 0) && (t < minInterDist))/* not behind the ray */
+                {
+                    minInterDist = t;/* finding closest intersection */
+                    obj = i;
+                }                /* a valid intersection */
+            }
+        if (obj)                           //got intersection
+        {
+            light += obj->material.ambient.blend(ambient);
+
+            where = r.onRay(minInterDist);           /* intersection's coordinate */
+
+            normal = obj->normal(where);
+
+            for (int i = 0; i < lsize; ++i)     /* illumination from each light */
+                if (!shadowRay(point_lights[i], where, obj))
+                    illuminate(light, point_lights[i], obj->material, normal, where, viewer);
+
+            _viewer = (viewer - where).unit();
+            reflect = normal * normal.dot(_viewer) * 2 - _viewer;
+            Ray rr(where, reflect); /* prepare recursive ray */
+
+            directRay(rlight.zero(), rr, viewer, obj, depth - 1);
+            light += rlight * obj->material.reflect;
+        }
+    }
 }
