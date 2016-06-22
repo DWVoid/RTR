@@ -2,10 +2,6 @@
 #include "Algebra.h"               /* self definition */
 
 
-Vec3d::Vec3d()
-{
-}
-
 Vec3d::Vec3d(double _x, double _y, double _z):
     x(_x), y(_y), z(_z)
 {
@@ -71,61 +67,56 @@ Vec3d Vec3d::blend(const Vec3d & b) const
 }
 
 Vec3d & Vec3d::zero()
- {
-    x = y = z = 0; 
+{
+   x = y = z = 0; 
+   return *this;
+}
+
+Vec3d & Vec3d::set(const Vec3d & to)
+{
+    x = to.x; 
+    y = to.y;
+    z = to.z;
     return *this;
- }
+}
 
- Vec3d & Vec3d::set(const Vec3d & to)
- {
-     x = to.x; 
-     y = to.y;
-     z = to.z;
-     return *this;
- }
+Vec3d & Vec3d::set(const double _x, const double _y, const double _z)
+{
+    x = _x;
+    y = _y;
+    z = _z;
+    return *this;
+}
 
- Vec3d & Vec3d::set(const double _x, const double _y, const double _z)
- {
-     x = _x;
-     y = _y;
-     z = _z;
-     return *this;
- }
+double Vec3d::length() const
+{
+    return (sqrt(x * x + y * y + z * z));
+}
 
- double Vec3d::length() const
- {
-     return (sqrt(x * x + y * y + z * z));
- }
+Vec3d Vec3d::unit() const
+{
+    const double l = length();
+    return Vec3d(x / l, y / l, z / l);
+}
 
- Vec3d Vec3d::unit() const
- {
-     const double l = length();
-     return Vec3d(x / l, y / l, z / l);
- }
+double Vec3d::dot(const Vec3d & b) const
+{
+   return(x * b.x + y * b.y + z * b.z);
+}
 
- double Vec3d::dot(const Vec3d & b) const
- {
-    return(x * b.x + y * b.y + z * b.z);
- }
+Plane::Plane(const Vec3d & normal, const Vec3d & origine) :
+    a(normal.x), b(normal.y), c(normal.z), d(-(origine.x * normal.x + origine.y * normal.y + origine.z * normal.z))
+{
+}
 
- Plane::Plane(const Vec3d & normal, const Vec3d & origine)
- {
-     v[0] = normal.x;
-     v[1] = normal.y;
-     v[2] = normal.z;
-     v[3] = -(origine.x * normal.x + origine.y * normal.y + origine.z * normal.z);
- }
-
- /**********************************************************\
- * Checking if a vertex belongs to the plane.             *
- *                                                        *
- * RETURNS: 0   when the vertex belongs to the plane;     *
- * -------- "+" when in the normal pointed                *
- *              halfplane;                                *
- *          "-" otherwise.                                *
- \**********************************************************/
-
- double Plane::vertexOnPlane(Vec3d & vertex) const
- {
-     return vertex.x * v[0] + vertex.y * v[1] + vertex.z * v[2] + v[3];
- }
+/////////////////////////////////////////////////////////////
+  ///Checking if a vertex belongs to the plane.             
+  ///                                                       
+  /// RETURNS: 0   when the vertex belongs to the plane     
+  ///          + when in the normal pointed halfplane                                
+  ///          - otherwise.                                
+/////////////////////////////////////////////////////////////
+double Plane::vertexOnPlane(const Vec3d & vertex) const
+{
+    return vertex.x * a + vertex.y * b + vertex.z * c + d;
+}

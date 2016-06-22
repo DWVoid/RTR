@@ -86,7 +86,7 @@ public:
         Vec3d& light, PointLight *l, const Material& material,
         const Vec3d& normal, const Vec3d& where, const Vec3d& viewer);
     bool shadowRay(PointLight *l, const Vec3d& point, BaseObject* cur_obj) const;
-    void directRay(Vec3d& light, const Ray& r, const Vec3d& viewer, BaseObject* cur_obj, const int depth);
+    void directRay(Vec3d& light, const Ray& r, const Vec3d& viewer, BaseObject* cur_obj, const size_t depth);
 };
 
 class Renderer
@@ -95,7 +95,7 @@ public:
     void init();
     std::shared_ptr<Scene> scene;
     std::vector<std::shared_ptr<Camera> > cameras;
-    void capture(const int xSize, const int ySize, const int camID, const int depth = 10);
+    void capture(const int xSize, const int ySize, const size_t camID, const size_t depth = 10);
 };
 
 #endif

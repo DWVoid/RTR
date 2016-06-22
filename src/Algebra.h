@@ -5,7 +5,7 @@ class Vec3d
 {
 public:
     double x, y, z;
-    Vec3d();
+    Vec3d() = default;
     Vec3d(double _x, double _y, double _z);
     Vec3d(const Vec3d& from, const Vec3d& to);
     Vec3d operator - (const Vec3d& b) const;
@@ -30,14 +30,10 @@ public:
 class Plane
 {
 private:
-    double v[4];
+    double a, b, c, d;
 public:
-    double& operator[](const int _v)
-    {
-        return v[_v];
-    }
     Plane(const Vec3d& normal, const Vec3d& origine);
-    double vertexOnPlane(Vec3d& vertex) const;
+    double vertexOnPlane(const Vec3d& vertex) const;
 };
 
 #endif
