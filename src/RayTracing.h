@@ -1,6 +1,6 @@
 #include <UILIb.h>
 
-#define main _main                          /* to accomodate windows */
+#undef main                        /* to accomodate windows */
 
 typedef int HW_pixel;
 

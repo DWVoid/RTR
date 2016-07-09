@@ -95,7 +95,7 @@ public:
     void init();
     std::shared_ptr<Scene> scene;
     std::vector<std::shared_ptr<Camera> > cameras;
-    void capture(const int xSize, const int ySize, const size_t camID, const size_t depth = 10);
+    unsigned char* capture(const int xSize, const int ySize, const size_t camID, const size_t depth = 10);
 };
 
 #endif

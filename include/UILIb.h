@@ -17,11 +17,13 @@ BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR P
 NONINFRINGEMENT.IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
 DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.*/
+#ifndef UILIB_H_
+#define UILIB_H_
 
 #ifdef UILIB_EXPORTS
-    #define UILIB_API __declspec(dllexport)
+#define UILIB_API __declspec(dllexport)
 #else
-    #define UILIB_API __declspec(dllimport)
+#define UILIB_API __declspec(dllimport)
 #endif
 
 #pragma warning(disable: 4251)
@@ -30,20 +32,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 
 //STL Headers
 #include <map>
-#include <unordered_map>
 #include <stack>
+#include <chrono>
 #include <string>
 #include <vector>
+#include <random>
+#include <memory>
+#include <climits>
 #include <sstream>
 #include <fstream>
 #include <iostream>
-#include <chrono>
-#include <climits>
-#include <random>
+#include <unordered_map>
 #include <initializer_list>
 
 //Boost Headers
-#include <boost/date_time.hpp>
+//#include <boost/date_time.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/spirit/home/support/detail/hold_any.hpp>
 
@@ -254,7 +257,7 @@ namespace UI
                     auto result = m_settings.find(key);
                     return (result != m_settings.end()) ? result->second.cast<T>() : defaultValue;
                 }
-                catch(boost::spirit::bad_any_cast e)
+                catch (boost::spirit::bad_any_cast e)
                 {
                     logerror("boost bad cast:" + std::string(e.from) + " to " + std::string(e.to));
                     UI::Logger::service.dump();
@@ -486,7 +489,7 @@ namespace UI
             }
 
             Window(const std::string& name, const int width, const int height,
-                   const int _xpos, const int _ypos);
+                const int _xpos, const int _ypos);
             void close();
             void resize(size_t x, size_t y);
             virtual void onShow();
@@ -912,8 +915,8 @@ namespace UI
         UILIB_API extern Theme SystemTheme;
     }
 
-//#undef UILIB_API
-//#define UILIB_API //disiable audio
+    //#undef UILIB_API
+    //#define UILIB_API //disiable audio
     namespace Audio
     {
         class UILIB_API Source;
@@ -1096,16 +1099,16 @@ namespace UI
                 //Interval
                 const double interval[11][2] =
                 {
-                    {DBL_MIN, 31.0},
-                    {31.0, 62.0},
-                    {125.0, 250.0},
-                    {250.0, 500.0},
-                    {500.0, 1000.0},
-                    {1000.0, 2000.0},
-                    {2000.0, 4000.0},
-                    {4000.0, 8000.0},
-                    {8000.0, 16000.0},
-                    {16000.0, DBL_MAX}
+                    { DBL_MIN, 31.0 },
+                    { 31.0, 62.0 },
+                    { 125.0, 250.0 },
+                    { 250.0, 500.0 },
+                    { 500.0, 1000.0 },
+                    { 1000.0, 2000.0 },
+                    { 2000.0, 4000.0 },
+                    { 4000.0, 8000.0 },
+                    { 8000.0, 16000.0 },
+                    { 16000.0, DBL_MAX }
                 };
 
                 EQ() = default;
@@ -1199,6 +1202,7 @@ namespace UI
             };
         }
     }
-//#undef UILIB_API
-//#define UILIB_API __declspec(dllexport)
+    //#undef UILIB_API
+    //#define UILIB_API __declspec(dllexport)
 }
+#endif

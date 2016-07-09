@@ -1,5 +1,3 @@
-#include "Graphics.h"           /* G_pixel */
-#include "Colour.h"             /* colour related */
 #include "Trace.h"              /* self definition */
 #include <math.h>               /* sqrt */
 
@@ -130,21 +128,24 @@ void Renderer::init()
         o->init();
 }
 
-void Renderer::capture(const int xSize, const int ySize, const size_t camID, const size_t depth)
+unsigned char* Renderer::capture(const int xSize, const int ySize, const size_t camID, const size_t depth)
 {
     Vec3d l;//light
     int coord[2];
-
+    unsigned char* res = new unsigned char[xSize * ySize * 4];
+    unsigned char* p = res;
     for (coord[0] = 0; coord[0] < xSize; ++coord[0])
         for (coord[1] = 0; coord[1] < ySize; ++coord[1])           /* for each pixel on screen */
         {
             //关键中的关键，计算环境光，返回pixel的照明度
             scene->directRay(l.zero(), cameras[camID]->genRay(coord[0] - xSize / 2, coord[1] - ySize / 2), cameras[camID]->viewer, nullptr, depth);
 
-            //Setting a pixel
-            G_pixel(coord,
-                CL_colour(l.x * CL_COLOUR_LEVELS, l.y * CL_COLOUR_LEVELS, l.z * CL_COLOUR_LEVELS));
+            *p = l.x * 256; p++;
+            *p = l.y * 256; p++;
+            *p = l.z * 256; p++;
+            *p = 255;       p++;
         }
+    return res;
 }
 
 

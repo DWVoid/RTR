@@ -14,9 +14,6 @@
     <ClCompile Include="src\Algebra.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Graphics.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\RayTracing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -26,9 +23,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Algebra.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Graphics.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\RayTracing.h">

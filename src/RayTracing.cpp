@@ -1,13 +1,12 @@
 #include "RayTracing.h"
 #include "Trace.h"
-#include "Graphics.h"
 #include "Algebra.h"
+#include <GL/glew.h>
 
 using namespace UI;
 using namespace UI::Core;
 using namespace UI::Base;
 using namespace UI::Controls;
-
 
 class Page0 : public Page
 {
@@ -79,11 +78,30 @@ public:
         PersetWorld();
         w.init();
         content = std::make_shared<Grid>();
-        std::shared_ptr<GLContext> context = std::make_shared(GLContext("MainContext", UI::Core::Margin::StretchStretch(0, 0, 0, 0, 0, 0, 0, 0)));
+        std::shared_ptr<GLContext> context = std::make_shared<GLContext>(GLContext("MainContext", UI::Core::Margin::StretchStretch(0, 0, 0, 0, 0, 0, 0, 0)));
         context->onRenderF = [this]()
         {
-
+            unsigned char* Tex = w.capture(HW_SCREEN_X_SIZE, HW_SCREEN_Y_SIZE, 0);
+            GLuint tex;
+            glGenTextures(1, &tex);
+            glBindTexture(GL_TEXTURE_2D, tex);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, HW_SCREEN_X_SIZE, HW_SCREEN_Y_SIZE, 0, GL_RGBA, GL_UNSIGNED_BYTE, Tex);
+            glBegin(GL_QUADS);
+            glTexCoord2d(0.0, 0.0);
+            glVertex2d(0.0, 0.0);
+            glTexCoord2d(1.0, 0.0);
+            glVertex2d(0.0, 600.0);
+            glTexCoord2d(1.0, 1.0);
+            glVertex2d(600.0, 600.0);
+            glTexCoord2d(0.0, 1.0);
+            glVertex2d(600.0, 0.0);
+            glEnd();
+            glDeleteTextures(1, &tex);
+            delete[]Tex;
         };
+        content->addChild(context);
     }
 };
 
@@ -99,19 +117,24 @@ public:
 class App : public Core::Application
 {
 public:
+    void beforeLaunch() override
+    {
+        UI::Audio::init();
+        UI::Base::init();
+        UI::Logger::init("./logs");
+        Font::service.addSearchPaths({ "C:/Windows/Fonts" , "." });
+    }
+
     void afterLaunch() override
     {
         addWindow(std::static_pointer_cast<Window>(std::make_shared<Window0>()));
     }
 };
 
-
-//////////////////////////////////////////////////////////////////////////////////
-/**********************************************************\
- * Rendering the bitmap into the window.                  *
-\**********************************************************/
-void app_main(void)                         /* rendering loop */
+int main()
 {
-    w.capture(HW_SCREEN_X_SIZE, HW_SCREEN_Y_SIZE, 0);
+    App app;
+    app.run();
+    UI::Logger::service.dump();
+    return 0;
 }
-
