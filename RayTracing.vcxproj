@@ -279,7 +279,6 @@
     <ClCompile Include="src\Algebra.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\RayTracing.h" />
     <ClInclude Include="src\Trace.h" />
     <ClInclude Include="src\Algebra.h" />
   </ItemGroup>

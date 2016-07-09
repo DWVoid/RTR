@@ -25,9 +25,6 @@
     <ClInclude Include="src\Algebra.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\RayTracing.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\Trace.h">
       <Filter>Header Files</Filter>
     </ClInclude>
