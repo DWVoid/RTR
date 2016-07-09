@@ -73,21 +73,24 @@ public:
         w.scene->objects.push_back(s3);
     }
     
+    GLuint tex;
+
     Page0() : Page()
     {
         PersetWorld();
-        w.init();
+        w.init(); unsigned char* Tex = w.capture(HW_SCREEN_X_SIZE, HW_SCREEN_Y_SIZE, 0);
+        glGenTextures(1, &tex);
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, HW_SCREEN_X_SIZE, HW_SCREEN_Y_SIZE, 0, GL_RGBA, GL_UNSIGNED_BYTE, Tex);
         content = std::make_shared<Grid>();
-        std::shared_ptr<GLContext> context = std::make_shared<GLContext>(GLContext("MainContext", UI::Core::Margin::StretchStretch(0, 0, 0, 0, 0, 0, 0, 0)));
+        std::shared_ptr<GLContext> context = std::make_shared<GLContext>(GLContext("MainContext", UI::Core::Margin::StretchStretch(0.1, 1, 0, 1, 20, 0, 0, 0)));
         context->onRenderF = [this]()
         {
-            unsigned char* Tex = w.capture(HW_SCREEN_X_SIZE, HW_SCREEN_Y_SIZE, 0);
-            GLuint tex;
-            glGenTextures(1, &tex);
+            glEnable(GL_TEXTURE_2D);
+            glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
             glBindTexture(GL_TEXTURE_2D, tex);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, HW_SCREEN_X_SIZE, HW_SCREEN_Y_SIZE, 0, GL_RGBA, GL_UNSIGNED_BYTE, Tex);
             glBegin(GL_QUADS);
             glTexCoord2d(0.0, 0.0);
             glVertex2d(0.0, 0.0);
@@ -98,10 +101,22 @@ public:
             glTexCoord2d(0.0, 1.0);
             glVertex2d(600.0, 0.0);
             glEnd();
-            glDeleteTextures(1, &tex);
-            delete[]Tex;
         };
-        content->addChild(context);
+        content->addChild(context); 
+        std::shared_ptr<Label> caption = std::make_shared<Label>(
+            "caption", Margin::StretchLeft(0, 0, 0, 20, 300, 40, 0), Globalization::Str("Input Something:",false));
+        content->addChild(caption);
+        std::shared_ptr<Button> exitbutton = std::make_shared<Button>(
+            "testbutton2", Margin::BottomCenter(0.1, 75, 75, 0, 80), Globalization::Str("Bye", false), []()
+        {
+            Core::application->terminate();
+        });
+        std::shared_ptr<TextBox> testbox = std::make_shared<TextBox>(
+            "testbox", Margin::CenterStretch(0, 1, 10, 10, 20, 20), L"", Globalization::Str("", false), []()
+        {
+        });
+        content->addChild(testbox);
+        content->addChild(exitbutton);
     }
 };
 

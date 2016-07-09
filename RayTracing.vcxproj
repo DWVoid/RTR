@@ -139,7 +139,8 @@
       <SubSystem>Windows</SubSystem>
       <OutputFile>$(SolutionDir)bin\$(Platform)\$(Configuration)\RayTracing.exe</OutputFile>
       <AdditionalDependencies>opengl32.lib;UILib.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <StackReserveSize>1000000</StackReserveSize>
+      <StackReserveSize>
+      </StackReserveSize>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
   </ItemDefinitionGroup>
@@ -179,7 +180,8 @@
       <SubSystem>Windows</SubSystem>
       <OutputFile>$(SolutionDir)bin\$(Platform)\$(Configuration)\RayTracing.exe</OutputFile>
       <AdditionalDependencies>opengl32.lib;UILib.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <StackReserveSize>1000000</StackReserveSize>
+      <StackReserveSize>
+      </StackReserveSize>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
   </ItemDefinitionGroup>
@@ -223,7 +225,8 @@
       <SubSystem>Windows</SubSystem>
       <OutputFile>$(SolutionDir)bin\$(Platform)\$(Configuration)\RayTracing.exe</OutputFile>
       <AdditionalDependencies>opengl32.lib;UILib.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <StackReserveSize>1000000</StackReserveSize>
+      <StackReserveSize>
+      </StackReserveSize>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
   </ItemDefinitionGroup>
@@ -265,7 +268,8 @@
       <SubSystem>Windows</SubSystem>
       <OutputFile>$(SolutionDir)bin\$(Platform)\$(Configuration)\RayTracing.exe</OutputFile>
       <AdditionalDependencies>opengl32.lib;UILib.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <StackReserveSize>1000000</StackReserveSize>
+      <StackReserveSize>
+      </StackReserveSize>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
   </ItemDefinitionGroup>
